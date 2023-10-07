@@ -54,7 +54,7 @@ async function main() {
           let { pathname } = new URL(a.href)
           // e.g. /hk/jobs-at/yan-chai-hospital-board-hk100027455/1
           let match = pathname.match(
-            /^\/hk\/jobs-at\/([a-z-]+)-hk(\d+)\/(\d+)$/,
+            /^\/hk\/jobs-at\/([a-z-']+)-hk(\d+)\/(\d+)$/,
           )
           if (!match)
             throw new Error('Unknown jobCardCompanyLink : ' + pathname)
@@ -119,11 +119,15 @@ async function main() {
 
             // e.g. /hk/job-list/information-technology/network-system/1
             let match = pathname.match(
-              /^\/hk\/job-list\/information-technology\/([a-z-]+)\/(\d+)$/,
+              /^\/hk\/job-list\/([a-z-]+)\/([a-z-]+)\/(\d+)$/,
             )
-            if (!match)
+            if (!match) {
+              console.log(node)
               throw new Error('Unknown jobCardCategoryLink: ' + pathname)
-            let slug = match[1]
+            }
+            let industry = match[1]
+            if (industry != 'information-technology') return
+            let slug = match[2]
             let name = a.innerText.trim()
             return { slug, name }
           },
