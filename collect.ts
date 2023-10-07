@@ -65,7 +65,7 @@ async function main() {
 
         function findJobCardLocationLink() {
           let a = node.querySelector<HTMLAnchorElement>(
-            'a[data-automation=jobCardLocationLink][href*=jobs-at]',
+            'a[data-automation=jobCardLocationLink][href*=-jobs-in-]',
           )
           if (!a) throw new Error(`jobCardLocationLink not found`)
           let { pathname } = new URL(a.href)
