@@ -3,6 +3,18 @@ import { proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { log } from 'console'
 import { db } from './db'
+import { readFileSync, writeFileSync } from 'fs'
+
+function getCurrentPage() {
+  try {
+    return +readFileSync('last.txt').toString() || 1
+  } catch (error) {
+    return 1
+  }
+}
+function saveCurrentPage(page: number) {
+  writeFileSync('last.txt', page + '')
+}
 
 async function main() {
   let browser = await chromium.launch({ headless: false })
@@ -21,9 +33,7 @@ async function main() {
   })
 
   // TODO store/detect last page
-  let lastPage = 1
-  // lastPage = 4
-  for (let pageNo = lastPage; pageNo <= pages; pageNo++) {
+  for (let pageNo = getCurrentPage(); pageNo <= pages; pageNo++) {
     console.log(`${pageNo}/${pages}`)
     let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/' + pageNo
     await page.goto(url)
@@ -249,6 +259,7 @@ async function main() {
     for (let job of jobs) {
       storeJob(job)
     }
+    saveCurrentPage(pageNo)
   }
 
   // TODO scroll to next page
