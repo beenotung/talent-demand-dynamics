@@ -24,7 +24,7 @@ export type Job = {
   ad_type?: AdType
   slug: string
   title: string
-  company_id: number
+  company_id: null | number
   company?: Company
   location_id: null | number
   location?: Location

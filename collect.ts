@@ -20,7 +20,10 @@ async function main() {
     return pages
   })
 
-  for (let pageNo = 1; pageNo <= pages; pageNo++) {
+  // TODO store/detect last page
+  let lastPage = 1
+  // lastPage = 4
+  for (let pageNo = lastPage; pageNo <= pages; pageNo++) {
     console.log(`${pageNo}/${pages}`)
     let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/' + pageNo
     await page.goto(url)
@@ -28,6 +31,7 @@ async function main() {
       return Array.from(
         document.querySelectorAll<HTMLDivElement>('[data-search-sol-meta]'),
         node => {
+          console.log(node)
           let searchSolMeta = JSON.parse(node.dataset.searchSolMeta!)
           let {
             // e.g. ORGANIC
@@ -68,7 +72,7 @@ async function main() {
             let a = node.querySelector<HTMLAnchorElement>(
               'a[data-automation=jobCardCompanyLink][href*=jobs-at]',
             )
-            if (!a) throw new Error(`jobCardCompanyLink not found`)
+            if (!a) return
             let { pathname } = new URL(a.href)
             // e.g. /hk/jobs-at/yan-chai-hospital-board-hk100027455/1
             let match = pathname.match(
@@ -195,7 +199,7 @@ async function main() {
         find(proxy.ad_type, { type: job.jobAdType })?.id ||
         proxy.ad_type.push({ type: job.jobAdType })
 
-      if (!(job.company.id in proxy.company)) {
+      if (job.company && !(job.company.id in proxy.company)) {
         proxy.company[job.company.id] = {
           slug: job.company.slug,
           name: job.company.name,
@@ -214,7 +218,7 @@ async function main() {
         ad_type_id,
         slug: job.jobSlug,
         title: job.jobTitle,
-        company_id: job.company.id,
+        company_id: job.company?.id || null,
         location_id,
         post_time: toSqliteTimestamp(new Date(job.jobPostTime)),
       }

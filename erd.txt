@@ -21,7 +21,7 @@ id integer PK
 ad_type_id integer FK >0- ad_type.id
 slug text
 title text
-company_id integer FK >0- company.id
+company_id integer NULL FK >0- company.id
 location_id integer NULL FK >0- location.id
 post_time timestamp
 
