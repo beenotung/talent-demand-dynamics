@@ -1,0 +1,98 @@
+# Visualize on https://erd.surge.sh
+# or https://quick-erd.surge.sh
+#
+# Relationship Types
+#  -    - one to one
+#  -<   - one to many
+#  >-   - many to one
+#  >-<  - many to many
+#  -0   - one to zero or one
+#  0-   - zero or one to one
+#  0-0  - zero or one to zero or one
+#  -0<  - one to zero or many
+#  >0-  - zero or many to one
+#
+////////////////////////////////////
+
+
+job
+---
+id integer PK
+ad_type_id integer FK >0- ad_type.id
+slug text
+title text
+company_id integer FK >0- company.id
+location_id integer FK >0- location.id
+
+
+ad_type
+-------
+id integer PK
+type text unique
+
+
+company
+-------
+id integer PK
+slug text
+name text
+
+
+location
+--------
+id integer PK
+slug text unique
+name text
+
+
+selling_point
+-------------
+id integer PK
+job_id integer FK >0- job.id
+
+
+category
+--------
+id integer PK
+slug text unique
+name text
+
+
+job_category
+------------
+id integer PK
+job_id integer FK >0- job.id
+category_id integer FK >0- category.id
+
+
+job_type
+--------
+id integer PK
+slug text unique
+name text
+
+
+job_type_job
+------------
+id integer PK
+job_id integer FK >0- job.id
+job_type_id integer FK >0- job_type.id
+
+
+# zoom: 1.000
+# view: (0, 0)
+# text-bg: #6495ed
+# text-color: #000000
+# diagram-bg: #f5f5f5
+# diagram-text: #f5f5f5
+# table-bg: #ffffff
+# table-text: #000000
+# job (422, 147)
+# ad_type (138, 58)
+# company (149, 280)
+# location (478, 457)
+# selling_point (789, 52)
+# category (1084, 294)
+# job_category (775, 219)
+# job_type (1121, 546)
+# job_type_job (785, 490)
