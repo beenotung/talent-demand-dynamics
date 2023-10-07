@@ -116,22 +116,26 @@ async function main() {
           },
         )
 
-        function findJobCardJobTypeLink() {
-          let a = node.querySelector<HTMLAnchorElement>(
-            'a[data-automation=jobCardJobTypeLink]',
+        function findJobCardJobTypeLinks() {
+          return Array.from(
+            node.querySelectorAll<HTMLAnchorElement>(
+              'a[data-automation=jobCardJobTypeLink]',
+            ),
+            a => {
+              let { pathname } = new URL(a.href)
+              // .e.g /hk/jobs/information-technology/full-time-employment/1
+              let match = pathname.match(
+                /^\/hk\/jobs\/information-technology\/([a-z-]+)\/(\d+)$/,
+              )
+              if (!match)
+                throw new Error(`Unknown jobCardJobTypeLink: ` + pathname)
+              let slug = match[1]
+              let name = a.innerText.trim()
+              return { slug, name }
+            },
           )
-          if (!a) throw new Error(`jobCardJobTypeLink not found`)
-          let { pathname } = new URL(a.href)
-          // .e.g /hk/jobs/information-technology/full-time-employment/1
-          let match = pathname.match(
-            /^\/hk\/jobs\/information-technology\/([a-z-]+)\/(\d+)$/,
-          )
-          if (!match) throw new Error(`Unknown jobCardJobTypeLink: ` + pathname)
-          let slug = match[1]
-          let name = a.innerText.trim()
-          return { slug, name }
         }
-        let jobType = findJobCardJobTypeLink()
+        let jobTypes = findJobCardJobTypeLinks()
 
         return {
           jobId,
@@ -142,7 +146,7 @@ async function main() {
           jobLocation,
           jobSellingPoints,
           jobCategories,
-          jobType,
+          jobTypes,
         }
       },
     )
