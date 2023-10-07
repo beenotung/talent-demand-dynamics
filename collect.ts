@@ -122,10 +122,8 @@ async function main() {
             let match = pathname.match(
               /^\/hk\/job-list\/([a-z-]+)\/([a-z-]+)\/(\d+)$/,
             )
-            if (!match) {
-              console.log(node)
+            if (!match)
               throw new Error('Unknown jobCardCategoryLink: ' + pathname)
-            }
             let industry = match[1]
             if (industry != 'information-technology') return
             let slug = match[2]
