@@ -29,6 +29,21 @@ async function main() {
         }
         let jobId = findJobId()
 
+        function findJobTitle() {
+          let a = node.querySelector('a')
+          if (!a) throw new Error(`jobTitle not found`)
+          let { pathname } = new URL(a.href)
+          // e.g. /hk/en/job/assistant-officer-information-technology-100003010667017
+          let match = pathname.match(/^\/hk\/en\/job\/([a-z-]+)-(\d+)$/)
+          if (!match) throw new Error('jobTitle not found')
+          let jobSlug = match[1]
+          let id = +match[2]
+          let jobTitle = a.innerText.trim()
+          if (id != jobId) throw new Error(`jobId mismatch: ${jobId} vs ${id}`)
+          return { jobSlug, jobTitle }
+        }
+        let { jobSlug, jobTitle } = findJobTitle()
+
         function findJobCardCompanyLink() {
           let a = node.querySelector<HTMLAnchorElement>(
             'a[data-automation=jobCardCompanyLink][href*=jobs-at]',
@@ -111,6 +126,8 @@ async function main() {
         return {
           jobId,
           jobAdType,
+          jobSlug,
+          jobTitle,
           company,
           jobLocation,
           jobCategories,
