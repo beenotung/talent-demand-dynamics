@@ -51,7 +51,9 @@ async function main() {
             if (!a) throw new Error(`jobTitle not found`)
             let { pathname } = new URL(a.href)
             // e.g. /hk/en/job/assistant-officer-information-technology-100003010667017
-            let match = pathname.match(/^\/hk\/en\/job\/([\w-'%&().]+)-(\d+)$/)
+            let match = pathname.match(
+              /^\/hk\/en\/job\/([\w-'%&().,+]+)-(\d+)$/,
+            )
             if (!match) throw new Error('Unknown jobTitle: ' + pathname)
             let jobSlug = match[1]
             let id = +match[2]
@@ -70,7 +72,7 @@ async function main() {
             let { pathname } = new URL(a.href)
             // e.g. /hk/jobs-at/yan-chai-hospital-board-hk100027455/1
             let match = pathname.match(
-              /^\/hk\/jobs-at\/([\w-'%&().]+)-hk(\d+)\/(\d+)$/,
+              /^\/hk\/jobs-at\/([\w-'%&().,+]+)-hk(\d+)\/(\d+)$/,
             )
             if (!match)
               throw new Error('Unknown jobCardCompanyLink : ' + pathname)
