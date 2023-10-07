@@ -2,6 +2,7 @@ import { chromium } from 'playwright'
 import { proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { log } from 'console'
+import { db } from './db'
 
 async function main() {
   let browser = await chromium.launch({ headless: false })
@@ -170,10 +171,10 @@ async function main() {
     )
   })
 
-  for (let job of jobs) {
+  let storeJob = db.transaction((job: (typeof jobs)[number]) => {
     if (job.jobId in proxy.job) {
       console.log('skip job:', job.jobId)
-      continue
+      return
     }
 
     let ad_type_id =
@@ -203,7 +204,33 @@ async function main() {
       post_time: toSqliteTimestamp(new Date(job.jobPostTime)),
     }
 
+    for (let content of job.jobSellingPoints) {
+      proxy.selling_point.push({
+        job_id: job.jobId,
+        content,
+      })
+    }
+
+    for (let category of job.jobCategories) {
+      if (!category) continue
+      let category_id =
+        find(proxy.category, { slug: category.slug })?.id ||
+        proxy.category.push({ slug: category.slug, name: category.name })
+      proxy.job_category.push({ job_id: job.jobId, category_id })
+    }
+
+    for (let jobType of job.jobTypes) {
+      let job_type_id =
+        find(proxy.job_type, { slug: jobType.slug })?.id ||
+        proxy.job_type.push({ slug: jobType.slug, name: jobType.name })
+      proxy.job_type_job.push({ job_id: job.jobId, job_type_id })
+    }
+
     console.log('saved job:', job.jobId)
+  })
+
+  for (let job of jobs) {
+    storeJob(job)
   }
 
   // TODO scroll to next page

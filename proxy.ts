@@ -35,6 +35,7 @@ export type SellingPoint = {
   id?: null | number
   job_id: number
   job?: Job
+  content: string
 }
 
 export type Category = {

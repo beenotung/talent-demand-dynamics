@@ -50,6 +50,7 @@ selling_point
 -------------
 id integer PK
 job_id integer FK >0- job.id
+content text
 
 
 category
