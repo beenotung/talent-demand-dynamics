@@ -37,8 +37,8 @@ async function main() {
           if (!a) throw new Error(`jobTitle not found`)
           let { pathname } = new URL(a.href)
           // e.g. /hk/en/job/assistant-officer-information-technology-100003010667017
-          let match = pathname.match(/^\/hk\/en\/job\/([a-z-]+)-(\d+)$/)
-          if (!match) throw new Error('jobTitle not found')
+          let match = pathname.match(/^\/hk\/en\/job\/([\w-'%&().]+)-(\d+)$/)
+          if (!match) throw new Error('Unknown jobTitle: ' + pathname)
           let jobSlug = match[1]
           let id = +match[2]
           let jobTitle = a.innerText.trim()
@@ -55,7 +55,7 @@ async function main() {
           let { pathname } = new URL(a.href)
           // e.g. /hk/jobs-at/yan-chai-hospital-board-hk100027455/1
           let match = pathname.match(
-            /^\/hk\/jobs-at\/([a-z-']+)-hk(\d+)\/(\d+)$/,
+            /^\/hk\/jobs-at\/([\w-'%&().]+)-hk(\d+)\/(\d+)$/,
           )
           if (!match)
             throw new Error('Unknown jobCardCompanyLink : ' + pathname)
@@ -70,7 +70,7 @@ async function main() {
           let a = node.querySelector<HTMLAnchorElement>(
             'a[data-automation=jobCardLocationLink][href*=-jobs-in-]',
           )
-          if (!a) throw new Error(`jobCardLocationLink not found`)
+          if (!a) return
           let { pathname } = new URL(a.href)
           // e.g. /hk/information-technology-jobs-in-tsuen-wan-area/1
           let match = pathname.match(
@@ -186,12 +186,13 @@ async function main() {
       }
     }
 
-    let location_id =
-      find(proxy.location, { slug: job.jobLocation.slug })?.id ||
-      proxy.location.push({
-        slug: job.jobLocation.slug,
-        name: job.jobLocation.name,
-      })
+    let location_id = !job.jobLocation
+      ? null
+      : find(proxy.location, { slug: job.jobLocation.slug })?.id ||
+        proxy.location.push({
+          slug: job.jobLocation.slug,
+          name: job.jobLocation.name,
+        })
 
     proxy.job[job.jobId] = {
       ad_type_id,

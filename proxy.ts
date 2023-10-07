@@ -26,7 +26,7 @@ export type Job = {
   title: string
   company_id: number
   company?: Company
-  location_id: number
+  location_id: null | number
   location?: Location
   post_time: string
 }
