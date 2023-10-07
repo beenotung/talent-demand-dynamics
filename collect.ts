@@ -87,6 +87,16 @@ async function main() {
         }
         let jobLocation = findJobCardLocationLink()
 
+        function findJobCardSellingPoints() {
+          return Array.from(
+            node.querySelectorAll<HTMLLIElement>(
+              '[data-automation="job-card-selling-points"] ul li',
+            ),
+            li => li.innerText.trim(),
+          )
+        }
+        let jobSellingPoints = findJobCardSellingPoints()
+
         let jobCategories = Array.from(
           node.querySelectorAll<HTMLAnchorElement>(
             'a[data-automation=jobCardCategoryLink][href*=job-list]',
@@ -130,6 +140,7 @@ async function main() {
           jobTitle,
           company,
           jobLocation,
+          jobSellingPoints,
           jobCategories,
           jobType,
         }
