@@ -186,7 +186,6 @@ async function main() {
 
     let storeJob = db.transaction((job: (typeof jobs)[number]) => {
       if (job.jobId in proxy.job) {
-        console.log('skip job:', job.jobId)
         return
       }
 
@@ -239,8 +238,6 @@ async function main() {
           proxy.job_type.push({ slug: jobType.slug, name: jobType.name })
         proxy.job_type_job.push({ job_id: job.jobId, job_type_id })
       }
-
-      console.log('saved job:', job.jobId)
     })
 
     for (let job of jobs) {
