@@ -1,4 +1,7 @@
 import { chromium } from 'playwright'
+import { proxy } from './proxy'
+import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
+import { log } from 'console'
 
 async function main() {
   let browser = await chromium.launch({ headless: false })
@@ -6,8 +9,7 @@ async function main() {
   let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/1'
   await page.goto(url)
 
-  let result = await page.evaluate(() => {
-    // TODO
+  let jobs = await page.evaluate(() => {
     return Array.from(
       document.querySelectorAll<HTMLDivElement>('[data-search-sol-meta]'),
       node => {
@@ -163,7 +165,44 @@ async function main() {
       },
     )
   })
-  console.log(result)
+
+  for (let job of jobs) {
+    if (job.jobId in proxy.job) {
+      console.log('skip job:', job.jobId)
+      continue
+    }
+
+    let ad_type_id =
+      find(proxy.ad_type, { type: job.jobAdType })?.id ||
+      proxy.ad_type.push({ type: job.jobAdType })
+
+    if (!(job.company.id in proxy.company)) {
+      proxy.company[job.company.id] = {
+        slug: job.company.slug,
+        name: job.company.name,
+      }
+    }
+
+    let location_id =
+      find(proxy.location, { slug: job.jobLocation.slug })?.id ||
+      proxy.location.push({
+        slug: job.jobLocation.slug,
+        name: job.jobLocation.name,
+      })
+
+    proxy.job[job.jobId] = {
+      ad_type_id,
+      slug: job.jobSlug,
+      title: job.jobTitle,
+      company_id: job.company.id,
+      location_id,
+      post_time: toSqliteTimestamp(new Date(job.jobPostTime)),
+    }
+
+    console.log('saved job:', job.jobId)
+  }
+
+  // TODO scroll to next page
   throw new Error('TODO')
 
   await page.close()
