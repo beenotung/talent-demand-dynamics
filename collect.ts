@@ -48,6 +48,30 @@ async function main() {
         }
         let company = findJobCardCompanyLink()
 
+        function findJobCardLocationLink() {
+          let a = node.querySelector<HTMLAnchorElement>(
+            'a[data-automation=jobCardLocationLink][href*=jobs-at]',
+          )
+          if (!a) throw new Error(`jobCardLocationLink not found`)
+          let { pathname } = new URL(a.href)
+          // e.g. /hk/information-technology-jobs-in-tsuen-wan-area/1
+          let match = pathname.match(
+            /^\/hk\/information-technology-jobs-in-([a-z-]+)\/(\d+)$/,
+          )
+          if (!match)
+            throw new Error('Unknown jobCardLocationLink: ' + pathname)
+          let slug = match[1]
+          let name = a.innerText.trim()
+          if (slug.endsWith('-area')) {
+            slug = slug.replace('-area', '')
+          }
+          if (name.endsWith(' Area')) {
+            name = name.replace(' Area', '')
+          }
+          return { slug, name }
+        }
+        let jobLocation = findJobCardLocationLink()
+
         let jobCategories = Array.from(
           node.querySelectorAll<HTMLAnchorElement>(
             'a[data-automation=jobCardCategoryLink][href*=job-list]',
@@ -88,6 +112,7 @@ async function main() {
           jobId,
           jobAdType,
           company,
+          jobLocation,
           jobCategories,
           jobType,
         }
