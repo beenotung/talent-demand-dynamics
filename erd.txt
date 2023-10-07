@@ -23,6 +23,7 @@ slug text
 title text
 company_id integer FK >0- company.id
 location_id integer FK >0- location.id
+post_time timestamp
 
 
 ad_type

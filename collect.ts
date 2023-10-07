@@ -97,6 +97,17 @@ async function main() {
         }
         let jobSellingPoints = findJobCardSellingPoints()
 
+        function findJobPostTime() {
+          let timeNode = node.querySelector('time[datetime]')
+          if (!timeNode) throw new Error('jobPostTime not found')
+          let value = timeNode.getAttribute('datetime')!
+          let date = new Date(value)
+          let time = date.getTime()
+          if (!time) throw new Error('invalid jobPostTime: ' + value)
+          return time
+        }
+        let jobPostTime = findJobPostTime()
+
         let jobCategories = Array.from(
           node.querySelectorAll<HTMLAnchorElement>(
             'a[data-automation=jobCardCategoryLink][href*=job-list]',
@@ -145,6 +156,7 @@ async function main() {
           company,
           jobLocation,
           jobSellingPoints,
+          jobPostTime,
           jobCategories,
           jobTypes,
         }

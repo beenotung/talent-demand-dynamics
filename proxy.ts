@@ -28,6 +28,7 @@ export type Job = {
   company?: Company
   location_id: number
   location?: Location
+  post_time: string
 }
 
 export type SellingPoint = {
