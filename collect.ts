@@ -1,8 +1,10 @@
 import { Page, chromium } from 'playwright'
-import { proxy } from './proxy'
+import { Job, proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
+import { createDefer } from '@beenotung/tslib/async/defer'
+import { later, runLater } from '@beenotung/tslib/async/wait'
 
 function getCurrentPage() {
   try {
@@ -15,7 +17,11 @@ function saveCurrentPage(page: number) {
   writeFileSync('last.txt', page + '')
 }
 
-async function collectJobList(page: Page, pageNo: number) {
+async function collectJobList(
+  page: Page,
+  pageNo: number,
+  jobDetailCollector: JobDetailCollector,
+) {
   let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/' + pageNo
   await page.goto(url)
   let jobs = await page.evaluate(() => {
@@ -180,9 +186,12 @@ async function collectJobList(page: Page, pageNo: number) {
     )
   })
 
+  const SKIP = 1
+  const NEW = 2
+
   let storeJob = db.transaction((job: (typeof jobs)[number]) => {
     if (job.jobId in proxy.job) {
-      return
+      return SKIP
     }
 
     let ad_type_id =
@@ -234,18 +243,81 @@ async function collectJobList(page: Page, pageNo: number) {
         proxy.job_type.push({ slug: jobType.slug, name: jobType.name })
       proxy.job_type_job.push({ job_id: job.jobId, job_type_id })
     }
+
+    return NEW
   })
 
   for (let job of jobs) {
-    storeJob(job)
+    let status = storeJob(job)
+    if (status == NEW) {
+      jobDetailCollector.queueJob(job.jobId)
+    }
   }
 }
+
+async function collectJobDetail(page: Page, jobId: number) {
+  let job = proxy.job[jobId]
+  let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
+  await page.goto(url)
+  await page.evaluate(() => {
+    function findJobDescription() {
+      let node = document.querySelector<HTMLDivElement>(
+        '[data-automation="jobDescription"]',
+      )
+      if (!node) throw new Error('jobDescription not found')
+      let html = node.innerHTML.trim()
+      let text = node.innerText.trim()
+      return { html, text }
+    }
+    let jobDescription = findJobDescription()
+
+    function findSections() {
+      // [
+      //   'Job Highlights',
+      //   'Job Description',
+      //   'Additional Information',
+      //   'Company Overview',
+      //   'Additional Company Information',
+      // ]
+      document.querySelectorAll('h4')
+    }
+  })
+}
+
+function createJobDetailCollector(page: Page) {
+  let jobIdQueue: number[] = []
+  let queue = Promise.resolve()
+  async function wait() {
+    while (jobIdQueue.length > 0) {
+      await queue
+    }
+    await page.close()
+  }
+  function queueJob(jobId: number) {
+    jobIdQueue.push(jobId)
+    queue = queue.then(tick)
+  }
+  async function tick() {
+    let jobId = jobIdQueue.shift()
+    if (!jobId) return
+    await collectJobDetail(page, jobId)
+    queue = queue.then(tick)
+  }
+  return {
+    queueJob,
+    wait,
+  }
+}
+
+type JobDetailCollector = ReturnType<typeof createJobDetailCollector>
 
 async function main() {
   let browser = await chromium.launch({ headless: false })
   let page = await browser.newPage()
   let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/1'
   await page.goto(url)
+
+  let jobDetailCollector = createJobDetailCollector(await browser.newPage())
 
   let pages = await page.evaluate(() => {
     let select = document.querySelector<HTMLSelectElement>('select#pagination')
@@ -259,14 +331,12 @@ async function main() {
 
   for (let pageNo = getCurrentPage(); pageNo <= pages; pageNo++) {
     console.log(`${pageNo}/${pages}`)
-    await collectJobList(page, pageNo)
+    await collectJobList(page, pageNo, jobDetailCollector)
     saveCurrentPage(pageNo)
   }
 
-  // TODO scroll to next page
-  throw new Error('TODO')
-
   await page.close()
+  await jobDetailCollector.wait()
   await browser.close()
 }
 main().catch(e => console.error(e))
