@@ -295,6 +295,8 @@ async function collectJobDetail(page: Page, jobId: number) {
             findCompanyOverview(h4)
             break
           case 'Additional Company Information':
+            findAdditionalCompanyInformation(h4)
+            break
           default:
             throw new Error('Unknown h4, text: ' + JSON.stringify(text))
         }
@@ -341,12 +343,39 @@ async function collectJobDetail(page: Page, jobId: number) {
       companyOverview.text = div.innerText
     }
 
+    let additionalCompanyInformation: Partial<{
+      'Industry': string
+      'Benefits & Others': string
+    }> = {}
+    function findAdditionalCompanyInformation(h4: HTMLHeadElement) {
+      let div = h4.parentElement?.nextElementSibling
+      if (!(div instanceof HTMLDivElement))
+        throw new Error('additionalCompanyInformation not found')
+      let lines = div.innerText.split('\n')
+      for (let i = 0; i < lines.length; i += 2) {
+        let key = lines[i]
+        let value = lines[i + 1]
+        switch (key) {
+          case 'Industry':
+          case 'Benefits & Others':
+            additionalCompanyInformation[key] = value
+            break
+          default:
+            throw new Error(
+              'Unknown additionalCompanyInformation, key: ' +
+                JSON.stringify(key),
+            )
+        }
+      }
+    }
+
     findSections()
 
     return {
       jobDescription,
       additionalInformation,
       companyOverview,
+      additionalCompanyInformation,
     }
   })
 }
