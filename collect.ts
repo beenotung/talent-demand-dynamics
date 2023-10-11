@@ -1,5 +1,5 @@
 import { Page, chromium } from 'playwright'
-import { Job, proxy } from './proxy'
+import { Job, JobDetail, proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
@@ -279,7 +279,74 @@ async function collectJobDetail(page: Page, jobId: number) {
       //   'Company Overview',
       //   'Additional Company Information',
       // ]
-      document.querySelectorAll('h4')
+      for (let h4 of document.querySelectorAll('h4')) {
+        let text = h4.innerText
+        switch (text) {
+          case 'Job Highlights':
+            // already collected from job list
+            break
+          case 'Job Description':
+            // already collected using data-automation
+            break
+          case 'Additional Information':
+            findAdditionalInformation(h4)
+            break
+          case 'Company Overview':
+            findCompanyOverview(h4)
+            break
+          case 'Additional Company Information':
+          default:
+            throw new Error('Unknown h4, text: ' + JSON.stringify(text))
+        }
+      }
+    }
+
+    let additionalInformation: Partial<{
+      'Career Level': string
+      'Qualification': string
+      'Years of Experience': string
+    }> = {}
+    function findAdditionalInformation(h4: HTMLHeadingElement) {
+      let div = h4.parentElement?.nextElementSibling
+      if (!(div instanceof HTMLDivElement))
+        throw new Error('additionalInformation table not found')
+      let lines = div.innerText.split('\n')
+      for (let i = 0; i < lines.length; i += 2) {
+        let key = lines[i]
+        let value = lines[i + 1]
+        switch (key) {
+          case 'Career Level':
+          case 'Qualification':
+          case 'Years of Experience':
+            additionalInformation[key] = value
+            break
+          case 'Job Type':
+          case 'Job Functions':
+            // already collected from job list
+            break
+          default:
+            throw new Error(
+              'Unknown additionalInformation, key: ' + JSON.stringify(key),
+            )
+        }
+      }
+    }
+
+    let companyOverview: Partial<{ html: string; text: string }> = {}
+    function findCompanyOverview(h4: HTMLHeadingElement) {
+      let div = h4.parentElement?.nextElementSibling
+      if (!(div instanceof HTMLDivElement))
+        throw new Error('companyOverview not found')
+      companyOverview.html = div.innerHTML
+      companyOverview.text = div.innerText
+    }
+
+    findSections()
+
+    return {
+      jobDescription,
+      additionalInformation,
+      companyOverview,
     }
   })
 }
@@ -325,7 +392,7 @@ async function main() {
     let pages = Math.max(
       ...Array.from(select.options, option => +option.value).filter(s => s),
     )
-    if (!pages) throw new Error('unknown pagination')
+    if (!pages) throw new Error('Unknown pagination')
     return pages
   })
 

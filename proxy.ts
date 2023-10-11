@@ -66,6 +66,32 @@ export type JobTypeJob = {
   job_type?: JobType
 }
 
+export type CareerLevel = {
+  id?: null | number
+  career_level: string
+}
+
+export type Qualification = {
+  id?: null | number
+  qualification: string
+}
+
+export type YearsOfExperience = {
+  id?: null | number
+  years_of_experience: string
+}
+
+export type JobDetail = {
+  id?: null | number
+  job?: Job
+  career_level_id: null | number
+  career_level?: CareerLevel
+  qualification_id: null | number
+  qualification?: Qualification
+  years_of_experience_id: null | number
+  years_of_experience?: YearsOfExperience
+}
+
 export type DBProxy = {
   ad_type: AdType[]
   company: Company[]
@@ -76,6 +102,10 @@ export type DBProxy = {
   job_category: JobCategory[]
   job_type: JobType[]
   job_type_job: JobTypeJob[]
+  career_level: CareerLevel[]
+  qualification: Qualification[]
+  years_of_experience: YearsOfExperience[]
+  job_detail: JobDetail[]
 }
 
 export let proxy = proxySchema<DBProxy>({
@@ -105,6 +135,16 @@ export let proxy = proxySchema<DBProxy>({
       /* foreign references */
       ['job', { field: 'job_id', table: 'job' }],
       ['job_type', { field: 'job_type_id', table: 'job_type' }],
+    ],
+    career_level: [],
+    qualification: [],
+    years_of_experience: [],
+    job_detail: [
+      /* foreign references */
+      ['job', { field: 'id', table: 'job' }],
+      ['career_level', { field: 'career_level_id', table: 'career_level' }],
+      ['qualification', { field: 'qualification_id', table: 'qualification' }],
+      ['years_of_experience', { field: 'years_of_experience_id', table: 'years_of_experience' }],
     ],
   },
 })
