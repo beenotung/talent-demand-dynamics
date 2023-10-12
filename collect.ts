@@ -1,10 +1,8 @@
 import { Page, chromium } from 'playwright'
-import { Job, JobDetail, proxy } from './proxy'
+import { proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
-import { createDefer } from '@beenotung/tslib/async/defer'
-import { later, runLater } from '@beenotung/tslib/async/wait'
 
 function getCurrentPage() {
   try {
@@ -495,28 +493,55 @@ function getDataId<T extends { id?: number | null }>(
   return find(table, data)?.id || table.push(data)
 }
 
+let select_pending_jobs = db
+  .prepare(
+    /* sql */ `
+select
+  id
+from job
+where id not in (
+  select id from job_detail
+)
+`,
+  )
+  .pluck()
+
 function createJobDetailCollector(page: Page) {
-  let jobIdQueue: number[] = []
-  let queue = Promise.resolve()
-  async function wait() {
-    while (jobIdQueue.length > 0) {
-      await queue
-    }
-    await page.close()
-  }
+  type Status = 'running' | 'idle'
+  let jobIdQueue: number[] = select_pending_jobs.all() as number[]
+  let status: Status = 'idle'
+
   function queueJob(jobId: number) {
     jobIdQueue.push(jobId)
-    queue = queue.then(tick)
+    if (status == 'idle') {
+      loop()
+    }
   }
-  async function tick() {
+
+  function loop() {
     let jobId = jobIdQueue.shift()
-    if (!jobId) return
-    await collectJobDetail(page, jobId)
-    queue = queue.then(tick)
+    if (!jobId) {
+      status = 'idle'
+      for (let teardown of teardownList) {
+        teardown()
+      }
+      return
+    }
+    status = 'running'
+    collectJobDetail(page, jobId).finally(loop)
   }
+
+  loop()
+
+  type Teardown = () => void
+
+  let teardownList: Teardown[] = []
+
+  let onEnd = teardownList.push.bind(teardownList)
+
   return {
     queueJob,
-    wait,
+    onEnd,
   }
 }
 
@@ -547,7 +572,8 @@ async function main() {
   }
 
   await page.close()
-  await jobDetailCollector.wait()
-  await browser.close()
+  jobDetailCollector.onEnd(() => {
+    browser.close()
+  })
 }
 main().catch(e => console.error(e))
