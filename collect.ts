@@ -257,26 +257,6 @@ async function collectJobList(
   }
 }
 
-type JobDetail = {
-  jobId: number
-  url: string
-  jobDescription: {
-    html: string
-    text: string
-  }
-  additionalInformation: Partial<{
-    'Career Level': string
-    'Qualification': string
-    'Years of Experience': string
-    'Company Website': string
-  }>
-  companyOverview: null | { html: string; text: string }
-  additionalCompanyInformation: Partial<{
-    'Industry': string
-    'Benefits & Others': string
-  }>
-}
-
 async function collectJobDetail(page: Page, jobId: number) {
   let job = proxy.job[jobId]
   let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
@@ -326,7 +306,12 @@ async function collectJobDetail(page: Page, jobId: number) {
         }
       }
 
-      let additionalInformation: JobDetail['additionalInformation'] = {}
+      let additionalInformation: Partial<{
+        'Career Level': string
+        'Qualification': string
+        'Years of Experience': string
+        'Company Website': string
+      }> = {}
       function findAdditionalInformation(h4: HTMLHeadingElement) {
         let div = h4.parentElement?.nextElementSibling
         if (!(div instanceof HTMLDivElement))
@@ -363,8 +348,10 @@ async function collectJobDetail(page: Page, jobId: number) {
         companyOverview = { html: div.innerHTML, text: div.innerText }
       }
 
-      let additionalCompanyInformation: JobDetail['additionalCompanyInformation'] =
-        {}
+      let additionalCompanyInformation: Partial<{
+        'Industry': string
+        'Benefits & Others': string
+      }> = {}
       function findAdditionalCompanyInformation(h4: HTMLHeadElement) {
         let div = h4.parentElement?.nextElementSibling
         if (!(div instanceof HTMLDivElement))
@@ -401,7 +388,7 @@ async function collectJobDetail(page: Page, jobId: number) {
     { jobId, url },
   )
 
-  let storeJobDetail = db.transaction((jobDetail: JobDetail) => {
+  let storeJobDetail = db.transaction(() => {
     let {
       jobId,
       url,
@@ -484,7 +471,7 @@ async function collectJobDetail(page: Page, jobId: number) {
     }
   })
 
-  storeJobDetail(jobDetail)
+  storeJobDetail()
 }
 
 function getDataId<T extends { id?: number | null }>(
