@@ -186,22 +186,25 @@ async function collectJobList(
     )
   })
 
+  type Job = (typeof jobs)[number]
+
   const SKIP = 1
   const NEW = 2
 
-  let storeJob = db.transaction((job: (typeof jobs)[number]) => {
+  let storeJob = db.transaction((job: Job) => {
     if (job.jobId in proxy.job) {
       return SKIP
     }
 
-    let ad_type_id =
-      find(proxy.ad_type, { type: job.jobAdType })?.id ||
-      proxy.ad_type.push({ type: job.jobAdType })
+    let ad_type_id = getDataId(proxy.ad_type, { type: job.jobAdType })
 
     if (job.company && !(job.company.id in proxy.company)) {
       proxy.company[job.company.id] = {
         slug: job.company.slug,
         name: job.company.name,
+        overview_id: null,
+        industry: null,
+        benefits: null,
       }
     }
 
@@ -255,129 +258,241 @@ async function collectJobList(
   }
 }
 
+type JobDetail = {
+  jobId: number
+  url: string
+  jobDescription: {
+    html: string
+    text: string
+  }
+  additionalInformation: Partial<{
+    'Career Level': string
+    'Qualification': string
+    'Years of Experience': string
+    'Company Website': string
+  }>
+  companyOverview: null | { html: string; text: string }
+  additionalCompanyInformation: Partial<{
+    'Industry': string
+    'Benefits & Others': string
+  }>
+}
+
 async function collectJobDetail(page: Page, jobId: number) {
   let job = proxy.job[jobId]
   let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
   await page.goto(url)
-  await page.evaluate(() => {
-    function findJobDescription() {
-      let node = document.querySelector<HTMLDivElement>(
-        '[data-automation="jobDescription"]',
-      )
-      if (!node) throw new Error('jobDescription not found')
-      let html = node.innerHTML.trim()
-      let text = node.innerText.trim()
-      return { html, text }
-    }
-    let jobDescription = findJobDescription()
+  let jobDetail = await page.evaluate(
+    ({ jobId, url }) => {
+      function findJobDescription() {
+        let node = document.querySelector<HTMLDivElement>(
+          '[data-automation="jobDescription"]',
+        )
+        if (!node) throw new Error('jobDescription not found')
+        let html = node.innerHTML.trim()
+        let text = node.innerText.trim()
+        return { html, text }
+      }
+      let jobDescription = findJobDescription()
 
-    function findSections() {
-      // [
-      //   'Job Highlights',
-      //   'Job Description',
-      //   'Additional Information',
-      //   'Company Overview',
-      //   'Additional Company Information',
-      // ]
-      for (let h4 of document.querySelectorAll('h4')) {
-        let text = h4.innerText
-        switch (text) {
-          case 'Job Highlights':
-            // already collected from job list
-            break
-          case 'Job Description':
-            // already collected using data-automation
-            break
-          case 'Additional Information':
-            findAdditionalInformation(h4)
-            break
-          case 'Company Overview':
-            findCompanyOverview(h4)
-            break
-          case 'Additional Company Information':
-            findAdditionalCompanyInformation(h4)
-            break
-          default:
-            throw new Error('Unknown h4, text: ' + JSON.stringify(text))
+      function findSections() {
+        // [
+        //   'Job Highlights',
+        //   'Job Description',
+        //   'Additional Information',
+        //   'Company Overview',
+        //   'Additional Company Information',
+        // ]
+        for (let h4 of document.querySelectorAll('h4')) {
+          let text = h4.innerText
+          switch (text) {
+            case 'Job Highlights':
+              // already collected from job list
+              break
+            case 'Job Description':
+              // already collected using data-automation
+              break
+            case 'Additional Information':
+              findAdditionalInformation(h4)
+              break
+            case 'Company Overview':
+              findCompanyOverview(h4)
+              break
+            case 'Additional Company Information':
+              findAdditionalCompanyInformation(h4)
+              break
+            default:
+              throw new Error('Unknown h4, text: ' + JSON.stringify(text))
+          }
         }
       }
-    }
 
-    let additionalInformation: Partial<{
-      'Career Level': string
-      'Qualification': string
-      'Years of Experience': string
-    }> = {}
-    function findAdditionalInformation(h4: HTMLHeadingElement) {
-      let div = h4.parentElement?.nextElementSibling
-      if (!(div instanceof HTMLDivElement))
-        throw new Error('additionalInformation table not found')
-      let lines = div.innerText.split('\n')
-      for (let i = 0; i < lines.length; i += 2) {
-        let key = lines[i]
-        let value = lines[i + 1]
-        switch (key) {
-          case 'Career Level':
-          case 'Qualification':
-          case 'Years of Experience':
-            additionalInformation[key] = value
-            break
-          case 'Job Type':
-          case 'Job Functions':
-            // already collected from job list
-            break
-          default:
-            throw new Error(
-              'Unknown additionalInformation, key: ' + JSON.stringify(key),
-            )
+      let additionalInformation: JobDetail['additionalInformation'] = {}
+      function findAdditionalInformation(h4: HTMLHeadingElement) {
+        let div = h4.parentElement?.nextElementSibling
+        if (!(div instanceof HTMLDivElement))
+          throw new Error('additionalInformation table not found')
+        let lines = div.innerText.split('\n')
+        for (let i = 0; i < lines.length; i += 2) {
+          let key = lines[i]
+          let value = lines[i + 1].trim()
+          switch (key) {
+            case 'Career Level':
+            case 'Qualification':
+            case 'Years of Experience':
+            case 'Company Website':
+              additionalInformation[key] = value
+              break
+            case 'Job Type':
+            case 'Job Functions':
+              // already collected from job list
+              break
+            default:
+              throw new Error(
+                'Unknown additionalInformation:' +
+                  JSON.stringify({ key, value, url, jobId }),
+              )
+          }
         }
       }
-    }
 
-    let companyOverview: Partial<{ html: string; text: string }> = {}
-    function findCompanyOverview(h4: HTMLHeadingElement) {
-      let div = h4.parentElement?.nextElementSibling
-      if (!(div instanceof HTMLDivElement))
-        throw new Error('companyOverview not found')
-      companyOverview.html = div.innerHTML
-      companyOverview.text = div.innerText
-    }
+      let companyOverview: { html: string; text: string } | null = null
+      function findCompanyOverview(h4: HTMLHeadingElement) {
+        let div = h4.parentElement?.nextElementSibling
+        if (!(div instanceof HTMLDivElement))
+          throw new Error('companyOverview not found')
+        companyOverview = { html: div.innerHTML, text: div.innerText }
+      }
 
-    let additionalCompanyInformation: Partial<{
-      'Industry': string
-      'Benefits & Others': string
-    }> = {}
-    function findAdditionalCompanyInformation(h4: HTMLHeadElement) {
-      let div = h4.parentElement?.nextElementSibling
-      if (!(div instanceof HTMLDivElement))
-        throw new Error('additionalCompanyInformation not found')
-      let lines = div.innerText.split('\n')
-      for (let i = 0; i < lines.length; i += 2) {
-        let key = lines[i]
-        let value = lines[i + 1]
-        switch (key) {
-          case 'Industry':
-          case 'Benefits & Others':
-            additionalCompanyInformation[key] = value
-            break
-          default:
-            throw new Error(
-              'Unknown additionalCompanyInformation, key: ' +
-                JSON.stringify(key),
-            )
+      let additionalCompanyInformation: JobDetail['additionalCompanyInformation'] =
+        {}
+      function findAdditionalCompanyInformation(h4: HTMLHeadElement) {
+        let div = h4.parentElement?.nextElementSibling
+        if (!(div instanceof HTMLDivElement))
+          throw new Error('additionalCompanyInformation not found')
+        let lines = div.innerText.split('\n')
+        for (let i = 0; i < lines.length; i += 2) {
+          let key = lines[i]
+          let value = lines[i + 1]
+          switch (key) {
+            case 'Industry':
+            case 'Benefits & Others':
+              additionalCompanyInformation[key] = value
+              break
+            default:
+              throw new Error(
+                'Unknown additionalCompanyInformation: ' +
+                  JSON.stringify({ key, value, url, jobId }),
+              )
+          }
         }
       }
-    }
 
-    findSections()
+      findSections()
 
-    return {
+      return {
+        jobId,
+        url,
+        jobDescription,
+        additionalInformation,
+        companyOverview,
+        additionalCompanyInformation,
+      }
+    },
+    { jobId, url },
+  )
+
+  let storeJobDetail = db.transaction((jobDetail: JobDetail) => {
+    let {
+      jobId,
+      url,
       jobDescription,
       additionalInformation,
       companyOverview,
       additionalCompanyInformation,
+    } = jobDetail
+
+    if (jobId in proxy.job_detail) return
+
+    let description_id = proxy.content.push({
+      html: jobDescription.html,
+      text: jobDescription.text,
+    })
+
+    let career_level_id = !additionalInformation['Career Level']
+      ? null
+      : getDataId(proxy.career_level, {
+          career_level: additionalInformation['Career Level'],
+        })
+
+    let qualification_id = !additionalInformation.Qualification
+      ? null
+      : getDataId(proxy.qualification, {
+          qualification: additionalInformation.Qualification,
+        })
+
+    let years_of_experience_id = !additionalInformation['Years of Experience']
+      ? null
+      : getDataId(proxy.years_of_experience, {
+          years_of_experience: additionalInformation['Years of Experience'],
+        })
+
+    let company_website_id = !additionalInformation['Company Website']
+      ? null
+      : getDataId(proxy.company_website, {
+          company_website: additionalInformation['Company Website'],
+        })
+
+    proxy.job_detail[jobId] = {
+      description_id,
+      career_level_id,
+      qualification_id,
+      years_of_experience_id,
+      company_website_id,
+    }
+
+    let job = proxy.job[jobId]
+    let company = job.company!
+    if (companyOverview?.text) {
+      let overview = company.overview
+      if (overview) {
+        overview.html = companyOverview.html
+        overview.text = companyOverview.text
+      } else {
+        company.overview_id = proxy.content.push({
+          html: companyOverview.html,
+          text: companyOverview.text,
+        })
+      }
+    }
+
+    if (additionalCompanyInformation.Industry) {
+      company.industry = additionalCompanyInformation.Industry
+    }
+
+    let benefits = additionalCompanyInformation['Benefits & Others']
+    if (benefits) {
+      company.benefits = benefits
+      for (let benefit of benefits.split(',')) {
+        benefit = benefit.trim()
+        if (!benefit) continue
+        let benefit_id = getDataId(proxy.benefit, { benefit })
+        getDataId(proxy.company_benefit, {
+          company_id: company.id!,
+          benefit_id,
+        })
+      }
     }
   })
+
+  storeJobDetail(jobDetail)
+}
+
+function getDataId<T extends { id?: number | null }>(
+  table: T[],
+  data: T,
+): number {
+  return find(table, data)?.id || table.push(data)
 }
 
 function createJobDetailCollector(page: Page) {

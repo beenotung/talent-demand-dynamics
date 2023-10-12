@@ -6,16 +6,31 @@ export type AdType = {
   type: string
 }
 
-export type Company = {
+export type Location = {
   id?: null | number
   slug: string
   name: string
 }
 
-export type Location = {
+export type Content = {
+  id?: null | number
+  html: string
+  text: string
+}
+
+export type Company = {
   id?: null | number
   slug: string
   name: string
+  overview_id: null | number
+  overview?: Content
+  industry: null | string
+  benefits: null | string
+}
+
+export type Benefit = {
+  id?: null | number
+  benefit: string
 }
 
 export type Job = {
@@ -24,10 +39,10 @@ export type Job = {
   ad_type?: AdType
   slug: string
   title: string
-  company_id: null | number
-  company?: Company
   location_id: null | number
   location?: Location
+  company_id: null | number
+  company?: Company
   post_time: string
 }
 
@@ -71,6 +86,14 @@ export type CareerLevel = {
   career_level: string
 }
 
+export type CompanyBenefit = {
+  id?: null | number
+  company_id: number
+  company?: Company
+  benefit_id: number
+  benefit?: Benefit
+}
+
 export type Qualification = {
   id?: null | number
   qualification: string
@@ -81,21 +104,32 @@ export type YearsOfExperience = {
   years_of_experience: string
 }
 
+export type CompanyWebsite = {
+  id?: null | number
+  company_website: string
+}
+
 export type JobDetail = {
   id?: null | number
   job?: Job
+  description_id: number
+  description?: Content
   career_level_id: null | number
   career_level?: CareerLevel
   qualification_id: null | number
   qualification?: Qualification
   years_of_experience_id: null | number
   years_of_experience?: YearsOfExperience
+  company_website_id: null | number
+  company_website?: CompanyWebsite
 }
 
 export type DBProxy = {
   ad_type: AdType[]
-  company: Company[]
   location: Location[]
+  content: Content[]
+  company: Company[]
+  benefit: Benefit[]
   job: Job[]
   selling_point: SellingPoint[]
   category: Category[]
@@ -103,8 +137,10 @@ export type DBProxy = {
   job_type: JobType[]
   job_type_job: JobTypeJob[]
   career_level: CareerLevel[]
+  company_benefit: CompanyBenefit[]
   qualification: Qualification[]
   years_of_experience: YearsOfExperience[]
+  company_website: CompanyWebsite[]
   job_detail: JobDetail[]
 }
 
@@ -112,13 +148,18 @@ export let proxy = proxySchema<DBProxy>({
   db,
   tableFields: {
     ad_type: [],
-    company: [],
     location: [],
+    content: [],
+    company: [
+      /* foreign references */
+      ['overview', { field: 'overview_id', table: 'content' }],
+    ],
+    benefit: [],
     job: [
       /* foreign references */
       ['ad_type', { field: 'ad_type_id', table: 'ad_type' }],
-      ['company', { field: 'company_id', table: 'company' }],
       ['location', { field: 'location_id', table: 'location' }],
+      ['company', { field: 'company_id', table: 'company' }],
     ],
     selling_point: [
       /* foreign references */
@@ -137,14 +178,22 @@ export let proxy = proxySchema<DBProxy>({
       ['job_type', { field: 'job_type_id', table: 'job_type' }],
     ],
     career_level: [],
+    company_benefit: [
+      /* foreign references */
+      ['company', { field: 'company_id', table: 'company' }],
+      ['benefit', { field: 'benefit_id', table: 'benefit' }],
+    ],
     qualification: [],
     years_of_experience: [],
+    company_website: [],
     job_detail: [
       /* foreign references */
       ['job', { field: 'id', table: 'job' }],
+      ['description', { field: 'description_id', table: 'content' }],
       ['career_level', { field: 'career_level_id', table: 'career_level' }],
       ['qualification', { field: 'qualification_id', table: 'qualification' }],
       ['years_of_experience', { field: 'years_of_experience_id', table: 'years_of_experience' }],
+      ['company_website', { field: 'company_website_id', table: 'company_website' }],
     ],
   },
 })
