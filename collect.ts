@@ -3,6 +3,7 @@ import { proxy } from './proxy'
 import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
+import { format_time_duration } from '@beenotung/tslib/format'
 
 function getCurrentPage() {
   try {
@@ -519,6 +520,8 @@ function createJobDetailCollector(page: Page) {
   }
 
   function loop() {
+    progress.jobs = jobIdQueue.length
+    reportProgress()
     let jobId = jobIdQueue.shift()
     if (!jobId) {
       status = 'idle'
@@ -547,6 +550,20 @@ function createJobDetailCollector(page: Page) {
 
 type JobDetailCollector = ReturnType<typeof createJobDetailCollector>
 
+let progress = {
+  startTime: Date.now(),
+  page: 0,
+  pages: 0,
+  jobs: 0,
+}
+function reportProgress() {
+  let passedTime = Date.now() - progress.startTime
+  let uptime = format_time_duration(passedTime)
+  process.stdout.write(
+    `\r  pages: ${progress.page}/${progress.pages} | pending jobs: ${progress.jobs} | passed time: ${uptime}  `,
+  )
+}
+
 async function main() {
   let browser = await chromium.launch({ headless: false })
   let page = await browser.newPage()
@@ -555,7 +572,7 @@ async function main() {
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
 
-  let pages = await page.evaluate(() => {
+  progress.pages = await page.evaluate(() => {
     let select = document.querySelector<HTMLSelectElement>('select#pagination')
     if (!select) throw new Error('pagination not found')
     let pages = Math.max(
@@ -565,15 +582,22 @@ async function main() {
     return pages
   })
 
-  for (let pageNo = getCurrentPage(); pageNo <= pages; pageNo++) {
-    console.log(`${pageNo}/${pages}`)
-    await collectJobList(page, pageNo, jobDetailCollector)
-    saveCurrentPage(pageNo)
+  for (
+    progress.page = getCurrentPage();
+    progress.page <= progress.pages;
+    progress.page++
+  ) {
+    reportProgress()
+    await collectJobList(page, progress.page, jobDetailCollector)
+    saveCurrentPage(progress.page)
   }
+  reportProgress()
 
   await page.close()
-  jobDetailCollector.onEnd(() => {
-    browser.close()
+  jobDetailCollector.onEnd(async () => {
+    await browser.close()
+    console.log()
+    console.log('ended.')
   })
 }
 main().catch(e => console.error(e))
