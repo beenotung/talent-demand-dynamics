@@ -37,16 +37,13 @@ company
 id integer PK
 slug text
 name text
-overview_id integer NULL FK - content.id
-industry text NULL
-benefits text NULL
 
 
 company_benefit
 ---------------
 id integer PK
-company_id integer FK >0- company.id
 benefit_id integer FK >0- benefit.id
+job_detail_id integer FK >0- job_detail.id
 
 
 benefit
@@ -105,6 +102,15 @@ career_level_id integer NULL FK >- career_level.id
 qualification_id integer NULL FK >- qualification.id
 years_of_experience_id integer NULL FK >- years_of_experience.id
 company_website_id integer NULL FK >- company_website.id
+company_overview_id integer NULL FK - content.id
+company_industry_id integer NULL FK >0- company_industry.id
+benefits_and_others text NULL
+
+
+company_industry
+----------------
+id integer PK
+company_industry text unique
 
 
 content
@@ -139,7 +145,7 @@ company_website text unique
 
 
 # zoom: 1.000
-# view: (301, 75)
+# view: (303, 98)
 # text-bg: #6495ed
 # text-color: #000000
 # diagram-bg: #f5f5f5
@@ -148,9 +154,9 @@ company_website text unique
 # table-text: #000000
 # job (422, 147)
 # ad_type (81, -145)
-# company (39, 245)
-# company_benefit (-261, 171)
-# benefit (-258, 342)
+# company (129, 220)
+# company_benefit (-91, 409)
+# benefit (-152, 235)
 # location (85, -27)
 # selling_point (789, 52)
 # category (1084, 294)
@@ -158,6 +164,7 @@ company_website text unique
 # job_type (1121, 546)
 # job_type_job (785, 490)
 # job_detail (275, 612)
+# company_industry (761, 824)
 # content (461, 410)
 # career_level (-122, 619)
 # qualification (-128, 730)

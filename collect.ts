@@ -201,9 +201,6 @@ async function collectJobList(
       proxy.company[job.company.id] = {
         slug: job.company.slug,
         name: job.company.name,
-        overview_id: null,
-        industry: null,
-        benefits: null,
       }
     }
 
@@ -340,7 +337,11 @@ async function collectJobDetail(page: Page, jobId: number) {
         }
       }
 
-      let companyOverview: { html: string; text: string } | null = null
+      function nullCast<T>(): T | null {
+        return null
+      }
+
+      let companyOverview: { html: string; text: string } | null = nullCast()
       function findCompanyOverview(h4: HTMLHeadingElement) {
         let div = h4.parentElement?.nextElementSibling
         if (!(div instanceof HTMLDivElement))
@@ -429,42 +430,40 @@ async function collectJobDetail(page: Page, jobId: number) {
           company_website: additionalInformation['Company Website'],
         })
 
+    let company_overview_id = !companyOverview
+      ? null
+      : proxy.content.push({
+          html: companyOverview.html,
+          text: companyOverview.text,
+        })
+
+    let company_industry_id = !additionalCompanyInformation.Industry
+      ? null
+      : getDataId(proxy.company_industry, {
+          company_industry: additionalCompanyInformation.Industry,
+        })
+
+    let benefits_and_others =
+      additionalCompanyInformation['Benefits & Others']?.trim() || null
+
     proxy.job_detail[jobId] = {
       description_id,
       career_level_id,
       qualification_id,
       years_of_experience_id,
       company_website_id,
+      company_overview_id,
+      company_industry_id,
+      benefits_and_others,
     }
 
-    let job = proxy.job[jobId]
-    let company = job.company!
-    if (companyOverview?.text) {
-      let overview = company.overview
-      if (overview) {
-        overview.html = companyOverview.html
-        overview.text = companyOverview.text
-      } else {
-        company.overview_id = proxy.content.push({
-          html: companyOverview.html,
-          text: companyOverview.text,
-        })
-      }
-    }
-
-    if (additionalCompanyInformation.Industry) {
-      company.industry = additionalCompanyInformation.Industry
-    }
-
-    let benefits = additionalCompanyInformation['Benefits & Others']
-    if (benefits) {
-      company.benefits = benefits
-      for (let benefit of benefits.split(',')) {
+    if (benefits_and_others) {
+      for (let benefit of benefits_and_others.split(',')) {
         benefit = benefit.trim()
         if (!benefit) continue
         let benefit_id = getDataId(proxy.benefit, { benefit })
         getDataId(proxy.company_benefit, {
-          company_id: company.id!,
+          job_detail_id: jobId,
           benefit_id,
         })
       }
