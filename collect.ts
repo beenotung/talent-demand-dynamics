@@ -455,6 +455,7 @@ async function collectJobDetail(page: Page, jobId: number) {
       company_overview_id,
       company_industry_id,
       benefits_and_others,
+      has_count_word: false,
     }
 
     if (benefits_and_others) {

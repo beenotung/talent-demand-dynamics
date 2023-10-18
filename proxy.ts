@@ -82,6 +82,22 @@ export type CareerLevel = {
   career_level: string
 }
 
+export type Word = {
+  id?: null | number
+  word: string
+  is_tech: null | boolean
+  job_count: number
+  company_count: number
+}
+
+export type CompanyWord = {
+  id?: null | number
+  company_id: number
+  company?: Company
+  word_id: number
+  word?: Word
+}
+
 export type CompanyIndustry = {
   id?: null | number
   company_industry: string
@@ -120,6 +136,7 @@ export type JobDetail = {
   company_industry_id: null | number
   company_industry?: CompanyIndustry
   benefits_and_others: null | string
+  has_count_word: null | boolean
 }
 
 export type CompanyBenefit = {
@@ -143,6 +160,8 @@ export type DBProxy = {
   job_type: JobType[]
   job_type_job: JobTypeJob[]
   career_level: CareerLevel[]
+  word: Word[]
+  company_word: CompanyWord[]
   company_industry: CompanyIndustry[]
   qualification: Qualification[]
   years_of_experience: YearsOfExperience[]
@@ -182,6 +201,12 @@ export let proxy = proxySchema<DBProxy>({
       ['job_type', { field: 'job_type_id', table: 'job_type' }],
     ],
     career_level: [],
+    word: [],
+    company_word: [
+      /* foreign references */
+      ['company', { field: 'company_id', table: 'company' }],
+      ['word', { field: 'word_id', table: 'word' }],
+    ],
     company_industry: [],
     qualification: [],
     years_of_experience: [],

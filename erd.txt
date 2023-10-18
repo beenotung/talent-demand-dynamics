@@ -105,6 +105,23 @@ company_website_id integer NULL FK >- company_website.id
 company_overview_id integer NULL FK - content.id
 company_industry_id integer NULL FK >0- company_industry.id
 benefits_and_others text NULL
+has_count_word boolean NULL
+
+
+word
+----
+id integer PK
+word text UNIQUE
+is_tech boolean NULL
+job_count integer
+company_count integer
+
+
+company_word
+------------
+id integer PK
+company_id integer FK >0- company.id
+word_id integer FK >0- word.id
 
 
 company_industry
@@ -156,7 +173,7 @@ company_website text unique
 # ad_type (81, -145)
 # company (129, 220)
 # company_benefit (-91, 409)
-# benefit (-152, 235)
+# benefit (-354, 397)
 # location (85, -27)
 # selling_point (789, 52)
 # category (1084, 294)
@@ -164,6 +181,8 @@ company_website text unique
 # job_type (1121, 546)
 # job_type_job (785, 490)
 # job_detail (275, 612)
+# word (-565, -22)
+# company_word (-192, 173)
 # company_industry (761, 824)
 # content (461, 410)
 # career_level (-122, 619)

@@ -12,3 +12,6 @@ dist/
 *.sqlite3-wal
 *.zip
 last.txt
+temp.html
+temp.txt
+words.txt
