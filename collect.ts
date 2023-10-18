@@ -542,12 +542,17 @@ let progress = {
   pages: 0,
   jobs: 0,
 }
+let lastReportLine = ''
 function reportProgress() {
   let passedTime = Date.now() - progress.startTime
   let uptime = format_time_duration(passedTime)
+  let reportLine = `  pages: ${progress.page}/${progress.pages} | pending jobs: ${progress.jobs} | passed time: ${uptime}`
   process.stdout.write(
-    `\r  pages: ${progress.page}/${progress.pages} | pending jobs: ${progress.jobs} | passed time: ${uptime}  `,
+    '\r' +
+      reportLine +
+      ' '.repeat(Math.max(0, lastReportLine.length - reportLine.length)),
   )
+  lastReportLine = reportLine
 }
 
 async function main() {
