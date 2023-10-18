@@ -254,6 +254,8 @@ async function collectJobList(
   }
 }
 
+type CollectedJobDetail = Awaited<ReturnType<typeof collectJobDetail>>
+
 async function collectJobDetail(page: Page, jobId: number) {
   let job = proxy.job[jobId]
   let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
@@ -389,7 +391,11 @@ async function collectJobDetail(page: Page, jobId: number) {
     { jobId, url },
   )
 
-  let storeJobDetail = db.transaction(() => {
+  return jobDetail
+}
+
+let storeCollectedJobDetail = db.transaction(
+  (jobDetail: CollectedJobDetail) => {
     let {
       jobId,
       url,
@@ -469,10 +475,8 @@ async function collectJobDetail(page: Page, jobId: number) {
         })
       }
     }
-  })
-
-  storeJobDetail()
-}
+  },
+)
 
 function getDataId<T extends { id?: number | null }>(
   table: T[],
@@ -518,7 +522,7 @@ function createJobDetailCollector(page: Page) {
       return
     }
     status = 'running'
-    collectJobDetail(page, jobId).finally(loop)
+    collectJobDetail(page, jobId).then(storeCollectedJobDetail).finally(loop)
   }
 
   loop()
