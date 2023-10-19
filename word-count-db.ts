@@ -12,7 +12,7 @@ let analyzeJobDetail = db.transaction(
       if (isStopWord(text)) continue
       text = text.toLowerCase()
       if (isStopWord(text)) continue
-      text = singular(text)
+      // text = singular(text) // skip this transform to preserve the "s" in "js"
       if (isStopWord(text)) continue
       let word = find(proxy.word, { word: text })
       if (!word) {
