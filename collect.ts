@@ -246,12 +246,17 @@ async function collectJobList(
     return NEW
   })
 
+  let nNewJob = 0
+
   for (let job of jobs) {
     let status = storeJob(job)
     if (status == NEW) {
       jobDetailCollector.queueJob(job.jobId)
+      nNewJob++
     }
   }
+
+  return { nNewJob }
 }
 
 type CollectedJobDetail = Awaited<ReturnType<typeof collectJobDetail>>
@@ -546,12 +551,17 @@ let progress = {
   page: 0,
   pages: 0,
   jobs: 0,
+  oldPage: 0,
+  maxOldPage: 20,
 }
 let lastReportLine = ''
 function reportProgress() {
   let passedTime = Date.now() - progress.startTime
   let uptime = format_time_duration(passedTime)
-  let reportLine = `  pages: ${progress.page}/${progress.pages} | pending jobs: ${progress.jobs} | passed time: ${uptime}`
+  let reportLine = `  pages: ${progress.page}/${progress.pages}`
+  reportLine += ` | old pages: ${progress.oldPage}/${progress.maxOldPage}`
+  reportLine += ` | pending jobs: ${progress.jobs}`
+  reportLine += ` | passed time: ${uptime}`
   process.stdout.write(
     '\r' +
       reportLine +
@@ -580,11 +590,16 @@ async function main() {
 
   for (
     progress.page = getCurrentPage();
-    progress.page <= progress.pages;
+    progress.page <= progress.pages && progress.oldPage <= progress.maxOldPage;
     progress.page++
   ) {
     reportProgress()
-    await collectJobList(page, progress.page, jobDetailCollector)
+    let result = await collectJobList(page, progress.page, jobDetailCollector)
+    if (result.nNewJob == 0) {
+      progress.oldPage++
+    } else {
+      progress.oldPage = 0
+    }
     saveCurrentPage(progress.page)
   }
   reportProgress()
