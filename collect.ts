@@ -4,6 +4,7 @@ import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
 import { format_time_duration } from '@beenotung/tslib/format'
+import { later } from '@beenotung/tslib/async/wait'
 
 function getCurrentPage() {
   try {
@@ -264,9 +265,10 @@ type CollectedJobDetail = Awaited<ReturnType<typeof collectJobDetail>>
 async function collectJobDetail(page: Page, jobId: number) {
   let job = proxy.job[jobId]
   let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
-  await page.goto(url)
-  let jobDetail = await page.evaluate(
-    ({ jobId, url }) => {
+
+  async function run() {
+    await page.goto(url)
+    return await page.evaluate(() => {
       function findJobDescription() {
         let node = document.querySelector<HTMLDivElement>(
           '[data-automation="jobDescription"]',
@@ -338,7 +340,7 @@ async function collectJobDetail(page: Page, jobId: number) {
             default:
               throw new Error(
                 'Unknown additionalInformation:' +
-                  JSON.stringify({ key, value, url, jobId }),
+                  JSON.stringify({ key, value }),
               )
           }
         }
@@ -376,7 +378,7 @@ async function collectJobDetail(page: Page, jobId: number) {
             default:
               throw new Error(
                 'Unknown additionalCompanyInformation: ' +
-                  JSON.stringify({ key, value, url, jobId }),
+                  JSON.stringify({ key, value }),
               )
           }
         }
@@ -385,18 +387,24 @@ async function collectJobDetail(page: Page, jobId: number) {
       findSections()
 
       return {
-        jobId,
-        url,
         jobDescription,
         additionalInformation,
         companyOverview,
         additionalCompanyInformation,
       }
-    },
-    { jobId, url },
-  )
+    })
+  }
 
-  return jobDetail
+  let jobDetail = await run().catch(async e => {
+    console.log()
+    console.error('Failed to get job detail, jobId:', jobId, 'url:', url)
+    console.error(e)
+    console.log()
+    await later(2000 + Math.random() * 1000)
+    return run()
+  })
+
+  return { jobId, url, ...jobDetail }
 }
 
 let storeCollectedJobDetail = db.transaction(
