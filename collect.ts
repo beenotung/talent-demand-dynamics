@@ -579,7 +579,7 @@ function reportProgress() {
 }
 
 async function main() {
-  let browser = await chromium.launch({ headless: false })
+  let browser = await chromium.launch({ headless: true })
   let page = await browser.newPage()
   let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/1'
   await page.goto(url)
