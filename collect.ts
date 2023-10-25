@@ -538,13 +538,13 @@ function createJobDetailCollector(page: Page) {
     collectJobDetail(page, jobId).then(storeCollectedJobDetail).finally(loop)
   }
 
-  loop()
-
   type Teardown = () => void
 
   let teardownList: Teardown[] = []
 
   let onEnd = teardownList.push.bind(teardownList)
+
+  loop()
 
   return {
     queueJob,
