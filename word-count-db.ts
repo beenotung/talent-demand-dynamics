@@ -16,14 +16,8 @@ where has_count_word = 0
   .pluck()
 
 let analyzeJobDetail = db.transaction(
-  (jobDetail: JobDetail, match: RegExpMatchArray) => {
-    for (let text of match) {
-      if (+text) continue
-      if (isStopWord(text)) continue
-      text = text.toLowerCase()
-      if (isStopWord(text)) continue
-      // text = singular(text) // skip this transform to preserve the "s" in "js"
-      if (isStopWord(text)) continue
+  (jobDetail: JobDetail, words: Set<string>) => {
+    for (let text of words) {
       let word = find(proxy.word, { word: text })
       if (!word) {
         let id = proxy.word.push({
@@ -54,8 +48,24 @@ timer.setEstimateProgress(job_ids.length)
 for (let job_id of job_ids) {
   timer.tick()
   let jobDetail = proxy.job_detail[job_id]
-  let match = jobDetail.description?.text.match(/(\w+)/g)
-  if (!match) continue
-  analyzeJobDetail(jobDetail, match)
+  let text = jobDetail.description?.text
+  if (!text) continue
+  let words = new Set<string>()
+  let patterns = [/(\w+)/g, /(react native)/gi]
+  for (let pattern of patterns) {
+    let match = text.match(pattern)
+    if (match) {
+      for (let word of match) {
+        if (+word) continue
+        if (isStopWord(word)) continue
+        word = word.toLowerCase()
+        if (isStopWord(word)) continue
+        // text = singular(text) // skip this transform to preserve the "s" in "js"
+        if (isStopWord(word)) continue
+        words.add(word)
+      }
+    }
+  }
+  analyzeJobDetail(jobDetail, words)
 }
 timer.end()
