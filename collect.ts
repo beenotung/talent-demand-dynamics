@@ -542,7 +542,13 @@ function createJobDetailCollector(page: Page) {
 
   let teardownList: Teardown[] = []
 
-  let onEnd = teardownList.push.bind(teardownList)
+  function onEnd(teardown: Teardown) {
+    if (status == 'idle') {
+      teardown()
+    } else {
+      teardownList.push(teardown)
+    }
+  }
 
   loop()
 
