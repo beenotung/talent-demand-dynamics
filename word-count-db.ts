@@ -5,6 +5,16 @@ import { filter, find } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { startTimer } from '@beenotung/tslib/timer'
 
+let select_job_ids = db
+  .prepare(
+    /* sql */ `
+select id from job_detail
+where has_count_word = 0
+   or has_count_word is null
+`,
+  )
+  .pluck()
+
 let analyzeJobDetail = db.transaction(
   (jobDetail: JobDetail, match: RegExpMatchArray) => {
     for (let text of match) {
@@ -39,11 +49,11 @@ let analyzeJobDetail = db.transaction(
 )
 
 let timer = startTimer('scan job detail')
-let rows = filter(proxy.job_detail, { has_count_word: null })
-timer.setEstimateProgress(rows.length)
-for (let jobDetail of rows) {
+let job_ids = select_job_ids.all() as number[]
+timer.setEstimateProgress(job_ids.length)
+for (let job_id of job_ids) {
   timer.tick()
-  if (jobDetail.has_count_word) continue
+  let jobDetail = proxy.job_detail[job_id]
   let match = jobDetail.description?.text.match(/(\w+)/g)
   if (!match) continue
   analyzeJobDetail(jobDetail, match)
