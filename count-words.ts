@@ -15,6 +15,16 @@ where has_count_word = 0
   )
   .pluck()
 
+let select_tech_words = db
+  .prepare(
+    /* sql */ `
+select word from word
+where is_tech = 1
+  and (word like '% %' or word like '%.%')
+`,
+  )
+  .pluck()
+
 let analyzeJobDetail = db.transaction(
   (jobDetail: JobDetail, words: Set<string>) => {
     for (let text of words) {
@@ -42,28 +52,33 @@ let analyzeJobDetail = db.transaction(
   },
 )
 
-let timer = startTimer('scan job detail')
+let timer = startTimer('scan tech words')
+let techWords = select_tech_words.all() as string[]
+
+timer.next('scan job detail')
 let job_ids = select_job_ids.all() as number[]
+
 timer.setEstimateProgress(job_ids.length)
 for (let job_id of job_ids) {
   timer.tick()
   let jobDetail = proxy.job_detail[job_id]
   let text = jobDetail.description?.text
   if (!text) continue
+  text = text.toLowerCase()
   let words = new Set<string>()
-  let patterns = [/(\w+)/g, /(react native)/gi]
-  for (let pattern of patterns) {
-    let match = text.match(pattern)
-    if (match) {
-      for (let word of match) {
-        if (+word) continue
-        if (isStopWord(word)) continue
-        word = word.toLowerCase()
-        if (isStopWord(word)) continue
-        // text = singular(text) // skip this transform to preserve the "s" in "js"
-        if (isStopWord(word)) continue
-        words.add(word)
-      }
+  for (let word of techWords) {
+    if (text.includes(word)) {
+      words.add(word)
+      text = text.replaceAll(word, ' ')
+    }
+  }
+  let match = text.match(/(\w+)/g)
+  if (match) {
+    for (let word of match) {
+      if (+word) continue
+      if (isStopWord(word)) continue
+      // text = singular(text) // skip this transform to preserve the "s" in "js"
+      words.add(word)
     }
   }
   analyzeJobDetail(jobDetail, words)
