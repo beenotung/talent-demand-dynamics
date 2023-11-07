@@ -54,6 +54,7 @@ let analyzeJobDetail = db.transaction(
 
 let timer = startTimer('scan tech words')
 let techWords = select_tech_words.all() as string[]
+techWords.sort((a, b) => b.length - a.length)
 
 timer.next('scan job detail')
 let job_ids = select_job_ids.all() as number[]
