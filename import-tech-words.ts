@@ -5,6 +5,7 @@ import { mobileFrameworks } from './res/tech-words/mobile-frameworks'
 import { patchTechs } from './res/tech-words/patch-techs'
 import { programmingLanguages } from './res/tech-words/programming-languages'
 import { serverFrameworks } from './res/tech-words/server-frameworks'
+import { databases } from './res/tech-words/databases'
 
 function importList(words: string[]) {
   for (let word of words) {
@@ -39,4 +40,5 @@ importList(programmingLanguages)
 importList(serverFrameworks)
 importList(javascriptWebFrameworks)
 importList(mobileFrameworks)
+importList(databases)
 importList(patchTechs)

@@ -1,0 +1,16 @@
+export let databases = [
+  'OracleDB',
+  'Oracle Database',
+  'PostgreSQL',
+  'MySQL',
+  'MongoDB',
+  'Microsoft SQL Server',
+  'MSSQL',
+  'MariaDB',
+  'Redis',
+  'IBM Db2',
+  'SQLite',
+  'Microsoft Access',
+  'Elasticsearch',
+  'Neo4j',
+]
