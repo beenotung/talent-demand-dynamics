@@ -12,6 +12,7 @@ function importList(words: string[]) {
   for (let word of words) {
     word = word.toLowerCase()
     word = tokenizeWord(word)
+    if (!word) continue
     if (word.endsWith('.js')) {
       importWord(word.replace(/\.js$/, 'js'))
       importWord(word.replace(/\.js$/, ''))
@@ -25,6 +26,7 @@ function importList(words: string[]) {
 }
 
 function importWord(word: string) {
+  if (word == 'solid') return
   let row = find(proxy.word, { word })
   if (!row) {
     proxy.word.push({

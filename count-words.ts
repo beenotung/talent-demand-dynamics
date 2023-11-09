@@ -16,12 +16,21 @@ where has_count_word = 0
   )
   .pluck()
 
-let select_tech_words = db
+let select_special_tech_words = db
   .prepare(
     /* sql */ `
 select word from word
 where is_tech = 1
   and (word like '% %' or word like '%.%' or word like '%-%')
+`,
+  )
+  .pluck()
+
+let select_all_tech_words = db
+  .prepare(
+    /* sql */ `
+select word from word
+where is_tech = 1
 `,
   )
   .pluck()
@@ -54,8 +63,12 @@ let analyzeJobDetail = db.transaction(
 )
 
 let timer = startTimer('scan tech words')
-let techWords = select_tech_words.all() as string[]
-techWords.sort((a, b) => b.length - a.length)
+let specialTechWords = select_special_tech_words.all() as string[]
+specialTechWords.sort((a, b) => b.length - a.length)
+let allTechWords = select_all_tech_words.all() as string[]
+
+specialTechWords = specialTechWords.map(tokenizeWord).filter(word => word)
+allTechWords = allTechWords.map(tokenizeWord).filter(word => word)
 
 timer.next('scan job detail')
 let job_ids = select_job_ids.all() as number[]
@@ -68,19 +81,19 @@ for (let job_id of job_ids) {
   if (!text) continue
   text = text.toLowerCase()
   let words = new Set<string>()
-  for (let word of techWords) {
-    word = tokenizeWord(word)
+  for (let word of specialTechWords) {
     if (text.includes(word)) {
       words.add(word)
       text = text.replaceAll(word, ' ')
     }
   }
-  let match = text.match(/([\w-]+)/g)
+  let match = text.match(/([\w-#]+)/g)
   if (match) {
     for (let word of match) {
       word = tokenizeWord(word)
+      if (!word) continue
       if (+word) continue
-      if (isStopWord(word)) continue
+      if (!allTechWords.includes(word) && isStopWord(word)) continue
       // text = singular(text) // skip this transform to preserve the "s" in "js"
       words.add(word)
     }
