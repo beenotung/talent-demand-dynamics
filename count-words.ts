@@ -1,10 +1,8 @@
 import { JobDetail, proxy } from './proxy'
-import { singular } from 'pluralize'
-import { isStopWord } from 'meta-stopwords'
-import { filter, find } from 'better-sqlite3-proxy'
+import { find } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { startTimer } from '@beenotung/tslib/timer'
-import { tokenizeWord } from './word'
+import { splitWords } from './word'
 
 let select_job_ids = db
   .prepare(
@@ -62,42 +60,35 @@ let analyzeJobDetail = db.transaction(
   },
 )
 
-let timer = startTimer('scan tech words')
-let specialTechWords = select_special_tech_words.all() as string[]
-specialTechWords.sort((a, b) => b.length - a.length)
-let allTechWords = select_all_tech_words.all() as string[]
+export function main() {
+  let timer = startTimer('scan tech words')
 
-specialTechWords = specialTechWords.map(tokenizeWord).filter(word => word)
-allTechWords = allTechWords.map(tokenizeWord).filter(word => word)
+  let specialTechWords = select_special_tech_words.all() as string[]
+  specialTechWords.sort((a, b) => b.length - a.length)
 
-timer.next('scan job detail')
-let job_ids = select_job_ids.all() as number[]
+  let allTechWords = select_all_tech_words.all() as string[]
 
-timer.setEstimateProgress(job_ids.length)
-for (let job_id of job_ids) {
-  timer.tick()
-  let jobDetail = proxy.job_detail[job_id]
-  let text = jobDetail.description?.text
-  if (!text) continue
-  text = text.toLowerCase()
-  let words = new Set<string>()
-  for (let word of specialTechWords) {
-    if (text.includes(word)) {
-      words.add(word)
-      text = text.replaceAll(word, ' ')
-    }
-  }
-  let match = text.match(/([\w-#]+)/g)
-  if (match) {
-    for (let word of match) {
-      word = tokenizeWord(word)
-      if (!word) continue
-      if (+word) continue
-      if (!allTechWords.includes(word) && isStopWord(word)) continue
-      // text = singular(text) // skip this transform to preserve the "s" in "js"
+  let specialWords = [...specialTechWords, 'r & d']
+
+  timer.next('scan job detail')
+  let job_ids = select_job_ids.all() as number[]
+
+  timer.setEstimateProgress(job_ids.length)
+  for (let job_id of job_ids) {
+    timer.tick()
+    let jobDetail = proxy.job_detail[job_id]
+    let text = jobDetail.description?.text
+    if (!text) continue
+    text = text.toLowerCase()
+    let words = new Set<string>()
+    for (let word of splitWords(specialWords, allTechWords, text)) {
       words.add(word)
     }
+    analyzeJobDetail(jobDetail, words)
   }
-  analyzeJobDetail(jobDetail, words)
+  timer.end()
 }
-timer.end()
+
+if (process.argv[1] === __filename) {
+  main()
+}

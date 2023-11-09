@@ -5,13 +5,11 @@ import { mobileFrameworks } from './res/tech-words/mobile-frameworks'
 import { patchTechs } from './res/tech-words/patch-techs'
 import { programmingLanguages } from './res/tech-words/programming-languages'
 import { serverFrameworks } from './res/tech-words/server-frameworks'
-import { tokenizeWord } from './word'
 import { databases } from './res/tech-words/databases'
 
 function importList(words: string[]) {
   for (let word of words) {
     word = word.toLowerCase()
-    word = tokenizeWord(word)
     if (!word) continue
     if (word.endsWith('.js')) {
       importWord(word.replace(/\.js$/, 'js'))
@@ -41,9 +39,15 @@ function importWord(word: string) {
   row.is_tech = true
 }
 
-importList(programmingLanguages)
-importList(serverFrameworks)
-importList(javascriptWebFrameworks)
-importList(mobileFrameworks)
-importList(databases)
-importList(patchTechs)
+export function main() {
+  importList(programmingLanguages)
+  importList(serverFrameworks)
+  importList(javascriptWebFrameworks)
+  importList(mobileFrameworks)
+  importList(databases)
+  importList(patchTechs)
+}
+
+if (process.argv[1] === __filename) {
+  main()
+}

@@ -13,7 +13,7 @@ export let serverFrameworks = [
   'Phoenix',
   'Snap',
   'Yesod',
-  'Click',
+  // 'Click',
   'OFBiz',
   'Shale',
   'Sling',

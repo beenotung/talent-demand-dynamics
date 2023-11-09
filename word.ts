@@ -1,9 +1,9 @@
+import { isStopWord } from 'meta-stopwords'
+
 export function tokenizeWord(word: string): string {
-  word = word.replace(/ /g, '').replace(/\./g, '').replace(/-/g, '')
-  switch (word) {
-    case 's':
-    case 'e':
-      return ''
+  word = word.replace(/ /g, '').replace(/-/g, '')
+  if (word[0] !== '.') {
+    word = word.replaceAll('.', '')
   }
   if (word == 'reactjs') return 'react'
   if (word == 'nuxt') return 'nuxtjs'
@@ -12,23 +12,55 @@ export function tokenizeWord(word: string): string {
   return word
 }
 
-export function splitWords(words: Set<string>, text: string): void {
+function expandPattern(word: string): string[] {
+  if (word.startsWith('angular')) return [word]
+  return [
+    word,
+    word + '.js',
+    word + 'js',
+    word.replace(/\.js$/, ''),
+    word.replace(/js$/, ''),
+  ]
+}
+
+export function* splitWords(
+  specialWords: string[],
+  allTechWords: string[],
+  text: string,
+) {
   if (text.includes('r&d')) {
-    words.add('r&d')
     text = text.replaceAll('r&d', '')
+    yield 'r&d'
   }
   if (text.includes('r & d')) {
-    words.add('r&d')
     text = text.replaceAll('r & d', '')
+    yield 'r&d'
   }
 
   if (text.includes('j query')) {
-    words.add('jquery')
     text = text.replaceAll('j query', '')
+    yield 'jquery'
+  }
+
+  for (let word of specialWords) {
+    let patterns = [
+      ...expandPattern(word),
+      ...expandPattern(tokenizeWord(word)),
+    ]
+    for (let pattern of patterns) {
+      if (text.includes(pattern)) {
+        text = text.replaceAll(pattern, '')
+        yield word
+      }
+    }
   }
 
   let match = text.match(/([\w-#]+)/g)
   if (!match) return
   for (let word of match) {
+    if (+word) continue
+    if (!allTechWords.includes(word) && isStopWord(word)) continue
+    // text = singular(text) // skip this transform to preserve the "s" in "js"
+    yield word
   }
 }
