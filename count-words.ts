@@ -4,6 +4,7 @@ import { isStopWord } from 'meta-stopwords'
 import { filter, find } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { startTimer } from '@beenotung/tslib/timer'
+import { tokenizeWord } from './word'
 
 let select_job_ids = db
   .prepare(
@@ -20,7 +21,7 @@ let select_tech_words = db
     /* sql */ `
 select word from word
 where is_tech = 1
-  and (word like '% %' or word like '%.%')
+  and (word like '% %' or word like '%.%' or word like '%-%')
 `,
   )
   .pluck()
@@ -68,14 +69,16 @@ for (let job_id of job_ids) {
   text = text.toLowerCase()
   let words = new Set<string>()
   for (let word of techWords) {
+    word = tokenizeWord(word)
     if (text.includes(word)) {
       words.add(word)
       text = text.replaceAll(word, ' ')
     }
   }
-  let match = text.match(/(\w+)/g)
+  let match = text.match(/([\w-]+)/g)
   if (match) {
     for (let word of match) {
+      word = tokenizeWord(word)
       if (+word) continue
       if (isStopWord(word)) continue
       // text = singular(text) // skip this transform to preserve the "s" in "js"

@@ -5,18 +5,21 @@ import { mobileFrameworks } from './res/tech-words/mobile-frameworks'
 import { patchTechs } from './res/tech-words/patch-techs'
 import { programmingLanguages } from './res/tech-words/programming-languages'
 import { serverFrameworks } from './res/tech-words/server-frameworks'
+import { tokenizeWord } from './word'
 import { databases } from './res/tech-words/databases'
 
 function importList(words: string[]) {
   for (let word of words) {
     word = word.toLowerCase()
-    importWord(word)
+    word = tokenizeWord(word)
     if (word.endsWith('.js')) {
+      importWord(word.replace(/\.js$/, 'js'))
       importWord(word.replace(/\.js$/, ''))
-    }
-    if (word.endsWith(' js')) {
-      importWord(word.replace(/\ js$/, ''))
-      importWord(word.replace(/\ js$/, '.js'))
+    } else if (word.endsWith('js')) {
+      importWord(word)
+      importWord(word.replace(/js$/, ''))
+    } else {
+      importWord(word)
     }
   }
 }
