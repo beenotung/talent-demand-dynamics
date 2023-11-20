@@ -147,6 +147,25 @@ export type CompanyBenefit = {
   job_detail?: JobDetail
 }
 
+export type UserAgent = {
+  id?: null | number
+  user_agent: string
+}
+
+export type Url = {
+  id?: null | number
+  url: string
+}
+
+export type RequestLog = {
+  id?: null | number
+  user_agent_id: null | number
+  user_agent?: UserAgent
+  url_id: number
+  url?: Url
+  timestamp: number
+}
+
 export type DBProxy = {
   ad_type: AdType[]
   location: Location[]
@@ -168,6 +187,9 @@ export type DBProxy = {
   company_website: CompanyWebsite[]
   job_detail: JobDetail[]
   company_benefit: CompanyBenefit[]
+  user_agent: UserAgent[]
+  url: Url[]
+  request_log: RequestLog[]
 }
 
 export let proxy = proxySchema<DBProxy>({
@@ -226,6 +248,13 @@ export let proxy = proxySchema<DBProxy>({
       /* foreign references */
       ['benefit', { field: 'benefit_id', table: 'benefit' }],
       ['job_detail', { field: 'job_detail_id', table: 'job_detail' }],
+    ],
+    user_agent: [],
+    url: [],
+    request_log: [
+      /* foreign references */
+      ['user_agent', { field: 'user_agent_id', table: 'user_agent' }],
+      ['url', { field: 'url_id', table: 'url' }],
     ],
   },
 })
