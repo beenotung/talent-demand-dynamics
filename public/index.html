@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>talent-demand-dynamics</title>
+    <style>
+      table {
+        border-collapse: collapse;
+      }
+      thead {
+        position: sticky;
+        top: 0;
+        background-color: white;
+      }
+      th {
+        outline: 1px solid black;
+        padding: 0.25rem;
+      }
+      td {
+        border-bottom: 1px solid black;
+        padding: 0.25rem;
+        text-align: end;
+      }
+      td:last-child {
+        text-align: start;
+      }
+      .percentage::before {
+        content: ' (';
+      }
+      .percentage::after {
+        content: '%)';
+      }
+    </style>
+  </head>
+  <body>
+    <h1>talent-demand-dynamics</h1>
+    <div>
+      <input
+        type="text"
+        placeholder="search by word"
+        oninput="search()"
+        id="searchInput"
+      />
+      <p id="result"></p>
+    </div>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>job_count</th>
+          <th>company_count</th>
+          <th>word</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tbody}
+      </tbody>
+    </table>
+    <script>
+      for (let row of table.tBodies[0].rows) {
+        row.job = +row.cells[0].innerText
+        row.company = +row.cells[1].innerText
+      }
+      function search() {
+        let text = searchInput.value.toLowerCase()
+        let job = 0
+        let company = 0
+        let rows = []
+        for (let row of table.tBodies[0].rows) {
+          let match = row.cells[2].textContent.includes(text)
+          row.hidden = !match
+          if (match) {
+            job += row.job
+            company += row.company
+            rows.push(row)
+          }
+        }
+        for (let row of rows) {
+          row.cells[0].querySelector('.percentage').textContent = (
+            (row.job / job) *
+            100
+          ).toFixed(0)
+          row.cells[1].querySelector('.percentage').textContent = (
+            (row.company / company) *
+            100
+          ).toFixed(0)
+        }
+        let n = rows.length
+        if (n > 1) {
+          result.textContent = `${n} matches`
+        } else {
+          result.textContent = `${n} match`
+        }
+      }
+      search()
+    </script>
+  </body>
+</html>
