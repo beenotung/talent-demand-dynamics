@@ -2,6 +2,8 @@
 set -e
 set -o pipefail
 
+npm run build
+
 source .env
 
 rsync -SavLPz \
