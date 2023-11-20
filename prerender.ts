@@ -59,8 +59,8 @@ function loadTemplate() {
     for (let word of data.words) {
       tbody += /* html */ `
 <tr>
-<td><span class="count">${word.job_count}</span><span class="percentage"></span></td>
-<td><span class="count">${word.company_count}</span><span class="percentage"></span></td>
+<td><span class="count">${word.job_count}</span><span class="relative"></span></td>
+<td><span class="count">${word.company_count}</span><span class="relative"></span></td>
 <td>${word.word}</td>
 </tr>
 `

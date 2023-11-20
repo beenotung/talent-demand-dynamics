@@ -25,12 +25,6 @@
       td:last-child {
         text-align: start;
       }
-      .percentage::before {
-        content: ' (';
-      }
-      .percentage::after {
-        content: '%)';
-      }
     </style>
   </head>
   <body>
@@ -45,6 +39,11 @@
       <p id="result"></p>
     </div>
     <p>Sample from jobs posted between {since} and {until}</p>
+    <div style="margin: 1rem 0">
+      <button onclick="mode='p'; search()">show percentage</button>
+      <button onclick="mode='x'; search()">show relative ratio</button>
+      <button onclick="mode=' '; search()">show occurrence count only</button>
+    </div>
     <table id="table">
       <thead>
         <tr>
@@ -58,33 +57,49 @@
       </tbody>
     </table>
     <script>
+      let mode = 'p'
       for (let row of table.tBodies[0].rows) {
         row.job = +row.cells[0].innerText
         row.company = +row.cells[1].innerText
       }
       function search() {
         let text = searchInput.value.toLowerCase()
-        let job = 0
-        let company = 0
+        let max_job = 0
+        let max_company = 0
+        let total_job = 0
+        let total_company = 0
         let rows = []
         for (let row of table.tBodies[0].rows) {
           let match = row.cells[2].textContent.includes(text)
           row.hidden = !match
           if (match) {
-            job += row.job
-            company += row.company
+            max_job = Math.max(max_job, row.job)
+            max_company = Math.max(max_company, row.company)
+            total_job += row.job
+            total_company += row.company
             rows.push(row)
           }
         }
         for (let row of rows) {
-          row.cells[0].querySelector('.percentage').textContent = (
-            (row.job / job) *
-            100
-          ).toFixed(0)
-          row.cells[1].querySelector('.percentage').textContent = (
-            (row.company / company) *
-            100
-          ).toFixed(0)
+          let job_relative = row.cells[0].querySelector('.relative')
+          let company_relative = row.cells[1].querySelector('.relative')
+
+          let job_percent = ((row.job / total_job) * 100).toFixed(0)
+          let company_percent = ((row.company / total_company) * 100).toFixed(0)
+
+          let job_x = ((row.job / max_job) * 100).toFixed(0)
+          let company_x = ((row.company / max_company) * 100).toFixed(0)
+
+          if (mode == 'p') {
+            job_relative.textContent = ` (${job_percent}%)`
+            company_relative.textContent = ` (${company_percent}%)`
+          } else if (mode == 'x') {
+            job_relative.textContent = ` (${job_x}x)`
+            company_relative.textContent = ` (${company_x}x)`
+          } else {
+            job_relative.textContent = ''
+            company_relative.textContent = ''
+          }
         }
         let n = rows.length
         if (n > 1) {
