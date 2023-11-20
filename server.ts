@@ -52,10 +52,10 @@ function getData(): Data {
   return { range, words }
 }
 
-function readTemplate() {
-  let html = readFileSync('public/index.html').toString()
+function loadTemplate() {
+  let template = readFileSync('template/index.html').toString()
 
-  let parts = html.split('{since}')
+  let parts = template.split('{since}')
   let p1 = parts[0]
 
   parts = parts[1].split('{until}')
@@ -80,15 +80,16 @@ function readTemplate() {
     }
     return `${p1}${range.since}${p2}${range.until}${p3}${tbody}${p4}`
   }
-  return { render }
+
+  let data = getData()
+  let html = render(data)
+  return { html }
 }
 
-let template = readTemplate()
+let page = loadTemplate()
 
 app.get('/', (req, res) => {
-  let template = readTemplate()
-  let data = getData()
-  res.end(template.render(data))
+  res.end(page.html)
 })
 
 app.use(express.static('public'))

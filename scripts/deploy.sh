@@ -9,7 +9,7 @@ source .env
 rsync -SavLPz \
   package.json \
   dist \
-	public \
+	template \
   db.sqlite3 \
   "$USER@$HOST:$PROJECT_DIR/"
 
