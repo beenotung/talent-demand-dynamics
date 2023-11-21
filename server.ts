@@ -5,6 +5,7 @@ import { env } from './env'
 import { readFileSync } from 'fs'
 import { find } from 'better-sqlite3-proxy'
 import { proxy } from './proxy'
+import { loadTemplate } from './prerender'
 
 let app = express()
 
@@ -37,13 +38,21 @@ function getUserAgentId(user_agent: string): number {
   return id
 }
 
-let html = readFileSync('public/index.html')
+let page = __filename.endsWith('.ts')
+  ? {
+      get html(): string {
+        return loadTemplate().html
+      },
+    }
+  : {
+      html: readFileSync('public/index.html'),
+    }
 
 app.get('/', (req, res) => {
   let timestamp = Date.now()
   let url = req.url
   let user_agent = req.headers['user-agent']
-  res.end(html)
+  res.end(page.html)
   setTimeout(() => {
     let url_id = getUrlId(url)
     let user_agent_id = user_agent ? getUserAgentId(user_agent) : null

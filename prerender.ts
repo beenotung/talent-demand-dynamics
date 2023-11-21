@@ -39,7 +39,7 @@ function getData(): Data {
   return { range, words }
 }
 
-function loadTemplate() {
+export function loadTemplate() {
   let template = readFileSync('template/index.html').toString()
 
   let parts = template.split('{since}')
@@ -73,7 +73,13 @@ function loadTemplate() {
   return { html }
 }
 
-let page = loadTemplate()
+function main() {
+  let page = loadTemplate()
 
-mkdirSync('public', { recursive: true })
-writeFileSync('public/index.html', page.html)
+  mkdirSync('public', { recursive: true })
+  writeFileSync('public/index.html', page.html)
+}
+
+if (process.argv[1] == __filename) {
+  main()
+}
