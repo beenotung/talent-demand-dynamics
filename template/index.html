@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>talent-demand-dynamics</title>
+    <title>Talent Demand Dynamics</title>
     <style>
       table {
         border-collapse: collapse;
@@ -25,27 +25,38 @@
       td:last-child {
         text-align: start;
       }
+      label {
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
-    <h1>talent-demand-dynamics</h1>
-    <div>
-      <input
-        type="text"
-        placeholder="search by keywords"
-        oninput="search()"
-        id="searchInput"
-      />
-      <div>
-        You can search using multiple keywords, separated by "/", e.g. "db/sql"
-      </div>
-      <p id="result"></p>
-    </div>
+    <h1>Talent Demand Dynamics</h1>
+    <p>
+      This page shows occurrence statistics of information technology keywords
+      shown in the job ads.
+    </p>
     <p>
       Sampled <span id="job_count">{job_count}</span> jobs from
       <span id="company_count">{company_count}</span> companies posted between
       {since} and {until}
     </p>
+    <div>
+      <p>
+        You can filter the keywords using multiple patterns, separated by "/".
+      </p>
+      <p>
+        For example, "db/sql" will match "mysql", "postgresql", "mariadb" e.t.c.
+      </p>
+      <label for="searchInput">Filter by keywords: </label>
+      <input
+        type="text"
+        oninput="search()"
+        id="searchInput"
+        placeholder="e.g. db/sql"
+      />
+      <p id="result"></p>
+    </div>
     <div style="margin: 1rem 0">
       <button onclick="mode='p'; search()">show percentage</button>
       <button onclick="mode='x'; search()">show relative ratio</button>
