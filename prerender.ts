@@ -1,5 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { db } from './db'
+import { count } from 'better-sqlite3-proxy'
+import { proxy } from './proxy'
 
 let select_range = db.prepare(/* sql */ `
 select
@@ -31,27 +33,42 @@ type Data = {
     job_count: number
     company_count: number
   }[]
+  job_count: number
+  company_count: number
 }
 
 function getData(): Data {
   let range = select_range.get() as Data['range']
   let words = select_words.all() as Data['words']
-  return { range, words }
+  return {
+    range,
+    words,
+    job_count: proxy.job.length,
+    company_count: proxy.company.length,
+  }
 }
 
 export function loadTemplate() {
   let template = readFileSync('template/index.html').toString()
 
-  let parts = template.split('{since}')
+  let parts = [template]
+
+  parts = parts[0].split('{job_count}')
   let p1 = parts[0]
 
-  parts = parts[1].split('{until}')
+  parts = parts[1].split('{company_count}')
   let p2 = parts[0]
 
-  parts = parts[1].split('{tbody}')
+  parts = parts[1].split('{since}')
   let p3 = parts[0]
 
-  let p4 = parts[1]
+  parts = parts[1].split('{until}')
+  let p4 = parts[0]
+
+  parts = parts[1].split('{tbody}')
+  let p5 = parts[0]
+
+  let p6 = parts[1]
 
   function render(data: Data): string {
     let { range } = data
@@ -65,7 +82,19 @@ export function loadTemplate() {
 </tr>
 `
     }
-    return `${p1}${range.since}${p2}${range.until}${p3}${tbody}${p4}`
+    return [
+      p1,
+      data.job_count,
+      p2,
+      data.company_count,
+      p3,
+      range.since,
+      p4,
+      range.until,
+      p5,
+      tbody,
+      p6,
+    ].join('')
   }
 
   let data = getData()

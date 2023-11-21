@@ -38,7 +38,11 @@
       />
       <p id="result"></p>
     </div>
-    <p>Sample from jobs posted between {since} and {until}</p>
+    <p>
+      Sampled <span id="job_count">{job_count}</span> jobs from
+      <span id="company_count">{company_count}</span> companies posted between
+      {since} and {until}
+    </p>
     <div style="margin: 1rem 0">
       <button onclick="mode='p'; search()">show percentage</button>
       <button onclick="mode='x'; search()">show relative ratio</button>
@@ -66,8 +70,8 @@
         let text = searchInput.value.toLowerCase()
         let max_job = 0
         let max_company = 0
-        let total_job = 0
-        let total_company = 0
+        let total_job = +job_count.innerText
+        let total_company = +company_count.innerText
         let rows = []
         for (let row of table.tBodies[0].rows) {
           let match = row.cells[2].textContent.includes(text)
@@ -75,8 +79,6 @@
           if (match) {
             max_job = Math.max(max_job, row.job)
             max_company = Math.max(max_company, row.company)
-            total_job += row.job
-            total_company += row.company
             rows.push(row)
           }
         }
