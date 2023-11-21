@@ -32,10 +32,13 @@
     <div>
       <input
         type="text"
-        placeholder="search by word"
+        placeholder="search by keywords"
         oninput="search()"
         id="searchInput"
       />
+      <div>
+        You can search by multiple keywords separated by "/", e.g. "db/sql"
+      </div>
       <p id="result"></p>
     </div>
     <p>
@@ -67,14 +70,21 @@
         row.company = +row.cells[1].innerText
       }
       function search() {
-        let text = searchInput.value.toLowerCase()
+        let searchText = searchInput.value.toLowerCase()
+        let keywords = searchText
+          .split('/')
+          .map(part => part.trim())
+          .filter(part => part.length > 0)
         let max_job = 0
         let max_company = 0
         let total_job = +job_count.innerText
         let total_company = +company_count.innerText
         let rows = []
         for (let row of table.tBodies[0].rows) {
-          let match = row.cells[2].textContent.includes(text)
+          let word = row.cells[2].innerText.trim()
+          let match =
+            keywords.length == 0 ||
+            keywords.some(keyword => word.includes(keyword))
           row.hidden = !match
           if (match) {
             max_job = Math.max(max_job, row.job)
