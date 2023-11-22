@@ -57,11 +57,21 @@
       />
       <p id="result"></p>
     </div>
-    <div style="margin: 1rem 0">
-      <button onclick="mode='p'; search()">show percentage</button>
-      <button onclick="mode='x'; search()">show relative ratio</button>
-      <button onclick="mode=' '; search()">show occurrence count only</button>
-    </div>
+    <form style="margin: 1rem 0" id="form">
+      <div class="radio-group">
+        show percentage:
+        <label> <input type="radio" name="mode" value="po" /> overall </label>
+        <label> <input type="radio" name="mode" value="pr" /> relative </label>
+      </div>
+      <div class="radio-group">
+        show ratio relative to:
+        <label> <input type="radio" name="mode" value="xo" /> top </label>
+      </div>
+      <div class="radio-group">
+        only show:
+        <label> <input type="radio" name="mode" value=" " /> occurrence </label>
+      </div>
+    </form>
     <table id="table">
       <thead>
         <tr>
@@ -75,13 +85,19 @@
       </tbody>
     </table>
     <script>
-      let mode = 'p'
+      let f1 = x => x.toFixed(1)
+      form.mode.value ||= 'po'
       for (let row of table.tBodies[0].rows) {
         row.job = +row.cells[0].innerText
         row.company = +row.cells[1].innerText
       }
+      for (let input of form.mode) {
+        input.onchange = search
+      }
       function search() {
+        let mode = form.mode.value
         let searchText = searchInput.value.toLowerCase()
+        console.log('search:', { mode, searchText })
         let keywords = searchText
           .split('/')
           .map(part => part.trim())
@@ -90,6 +106,8 @@
         let max_company = 0
         let total_job = +job_count.innerText
         let total_company = +company_count.innerText
+        let matched_job = 0
+        let matched_company = 0
         let rows = []
         for (let row of table.tBodies[0].rows) {
           let word = row.cells[2].innerText.trim()
@@ -100,29 +118,41 @@
           if (match) {
             max_job = Math.max(max_job, row.job)
             max_company = Math.max(max_company, row.company)
+            matched_job += row.job
+            matched_company += row.company
             rows.push(row)
           }
         }
-        for (let row of rows) {
-          let job_relative = row.cells[0].querySelector('.relative')
-          let company_relative = row.cells[1].querySelector('.relative')
-
-          let job_percent = ((row.job / total_job) * 100).toFixed(0)
-          let company_percent = ((row.company / total_company) * 100).toFixed(0)
-
-          let job_x = ((row.job / max_job) * 100).toFixed(0)
-          let company_x = ((row.company / max_company) * 100).toFixed(0)
-
-          if (mode == 'p') {
-            job_relative.textContent = ` (${job_percent}%)`
-            company_relative.textContent = ` (${company_percent}%)`
-          } else if (mode == 'x') {
-            job_relative.textContent = ` (${job_x}x)`
-            company_relative.textContent = ` (${company_x}x)`
-          } else {
-            job_relative.textContent = ''
-            company_relative.textContent = ''
+        let calc_relative = row => {
+          switch (mode) {
+            case 'po':
+              return {
+                job: ` (${f1((row.job / total_job) * 100)}%)`,
+                company: ` (${f1((row.company / total_company) * 100)}%)`,
+              }
+            case 'pr':
+              return {
+                job: ` (${f1((row.job / matched_job) * 100)}%)`,
+                company: ` (${f1((row.company / matched_company) * 100)}%)`,
+              }
+            case 'xo':
+              return {
+                job: ` (${f1((row.job / max_job) * 100)}x)`,
+                company: ` (${f1((row.company / max_company) * 100)}x)`,
+              }
+            case 'xr':
+              return {
+                job: ` (${f1((row.job / max_job) * 100)}x)`,
+                company: ` (${f1((row.company / max_company) * 100)}x)`,
+              }
+            default:
+              return { job: '', company: '' }
           }
+        }
+        for (let row of rows) {
+          let relative = calc_relative(row)
+          row.cells[0].querySelector('.relative').textContent = relative.job
+          row.cells[1].querySelector('.relative').textContent = relative.company
         }
         let n = rows.length
         if (n > 1) {
