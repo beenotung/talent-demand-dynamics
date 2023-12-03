@@ -29,4 +29,9 @@ export let patchTechs = [
   'app',
   'ai',
   'Hyper V',
+  'wordpress',
+  'opencart',
+  'shopify',
+  'Visual Basic',
+  'vb',
 ]
