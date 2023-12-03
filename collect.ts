@@ -535,7 +535,15 @@ function createJobDetailCollector(page: Page) {
       return
     }
     status = 'running'
-    collectJobDetail(page, jobId).then(storeCollectedJobDetail).finally(loop)
+    let startTime = Date.now()
+    collectJobDetail(page, jobId)
+      .then(storeCollectedJobDetail)
+      .finally(() => {
+        let endTime = Date.now()
+        progress.jobsUsedTime += endTime - startTime
+        progress.jobsDone++
+        loop()
+      })
   }
 
   type Teardown = () => void
@@ -565,6 +573,8 @@ let progress = {
   page: 0,
   pages: 0,
   jobs: 0,
+  jobsDone: 0,
+  jobsUsedTime: 0,
   oldPage: 0,
   maxOldPage: 20,
 }
@@ -572,9 +582,12 @@ let lastReportLine = ''
 function reportProgress() {
   let passedTime = Date.now() - progress.startTime
   let uptime = format_time_duration(passedTime)
+  let jobsETA = format_time_duration(
+    (progress.jobsUsedTime / progress.jobsDone) * progress.jobs,
+  )
   let reportLine = `  pages: ${progress.page}/${progress.pages}`
   reportLine += ` | old pages: ${progress.oldPage}/${progress.maxOldPage}`
-  reportLine += ` | pending jobs: ${progress.jobs}`
+  reportLine += ` | pending jobs: ${progress.jobs} (ETA: ${jobsETA})`
   reportLine += ` | passed time: ${uptime}`
   process.stdout.write(
     '\r' +
