@@ -34,4 +34,12 @@ export let patchTechs = [
   'shopify',
   'Visual Basic',
   'vb',
+  'stencil',
+  'cordova',
+  'phonegap',
+  'capacitor',
+  'webview',
+  'android',
+  'ios',
+  'linux',
 ]
