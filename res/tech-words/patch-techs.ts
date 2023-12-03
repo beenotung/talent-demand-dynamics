@@ -42,4 +42,5 @@ export let patchTechs = [
   'android',
   'ios',
   'linux',
+  // 'Java Script',
 ]

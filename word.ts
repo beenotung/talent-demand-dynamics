@@ -41,6 +41,10 @@ export function* splitWords(
     text = text.replaceAll('j query', '')
     yield 'jquery'
   }
+  if (text.includes('java script')) {
+    text = text.replaceAll('java script', '')
+    yield 'java script'
+  }
 
   for (let word of specialWords) {
     let patterns = [
