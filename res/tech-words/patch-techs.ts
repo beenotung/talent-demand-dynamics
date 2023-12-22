@@ -5,6 +5,7 @@ export let patchTechs = [
   'yolo',
   'opencv',
   'cv2',
+  'knexjs',
   'nestjs',
   'nodejs',
   'nuxtjs',
