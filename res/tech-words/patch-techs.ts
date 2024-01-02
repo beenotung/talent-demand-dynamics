@@ -43,4 +43,5 @@ export let patchTechs = [
   'android',
   'ios',
   'linux',
+  'docker',
 ]
