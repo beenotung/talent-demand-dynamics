@@ -619,7 +619,7 @@ function reportProgress() {
 }
 
 async function main() {
-  let browser = await chromium.launch({ headless: false })
+  let browser = await chromium.launch({ headless: true })
   let page = await browser.newPage()
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
