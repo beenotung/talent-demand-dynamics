@@ -19,7 +19,7 @@ job
 ---
 id integer PK
 ad_type_id integer FK >0- ad_type.id
-slug text
+slug text NULL
 title text
 location_id integer NULL FK >0- location.id
 company_id integer NULL FK >0- company.id

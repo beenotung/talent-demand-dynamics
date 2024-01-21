@@ -22,9 +22,14 @@ async function collectJobList(
   pageNo: number,
   jobDetailCollector: JobDetailCollector,
 ) {
-  let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/' + pageNo
+  let url = `https://hk.jobsdb.com/jobs-in-information-communication-technology?page=${pageNo}&sortmode=ListedDate`
   await page.goto(url)
   let jobs = await page.evaluate(() => {
+    for (let h3 of document.querySelectorAll('h3')) {
+      if (h3.innerText == 'No matching search results') {
+        return []
+      }
+    }
     return Array.from(
       document.querySelectorAll<HTMLDivElement>('[data-search-sol-meta]'),
       node => {
@@ -39,8 +44,8 @@ async function collectJobList(
 
         function findJobId() {
           let { jobId } = searchSolMeta
-          // e.g. jobsdb-hk-job-100003010667017
-          let match = jobId.match(/^jobsdb-hk-job-(\d+)$/)
+          // e.g. "73196713"
+          let match = jobId.match(/^(\d+)$/)
           if (!match) throw new Error(`Invalid jobId: ` + jobId)
           let id = +match[1]
           return id
@@ -48,36 +53,44 @@ async function collectJobList(
         let jobId = findJobId()
 
         function findJobTitle() {
-          let a = node.querySelector('a')
+          let a = node.querySelector<HTMLAnchorElement>('h3 a')
           if (!a) throw new Error(`jobTitle not found`)
           let { pathname } = new URL(a.href)
-          // e.g. /hk/en/job/assistant-officer-information-technology-100003010667017
-          let match = pathname.match(
-            /^\/hk\/en\/job\/([\w-'%&().,+~*!]+)-(\d+)$/,
-          )
-          if (!match) throw new Error('Unknown jobTitle: ' + pathname)
-          let jobSlug = match[1]
-          let id = +match[2]
-          let jobTitle = a.innerText.trim()
+          // e.g. /job/73196713
+          let match = pathname.match(/^\/job\/(\d+)$/)
+          if (!match) throw new Error('Unknown jobUrl: ' + pathname)
+          let id = +match[1]
           if (id != jobId) throw new Error(`jobId mismatch: ${jobId} vs ${id}`)
-          return { jobSlug, jobTitle }
+          let jobTitle = a.innerText.trim()
+          if (!jobTitle) throw new Error(`Unknown jobTitle, jobId: ` + id)
+          return { jobTitle }
         }
-        let { jobSlug, jobTitle } = findJobTitle()
+        let { jobTitle } = findJobTitle()
 
         function findJobCardCompanyLink() {
           let a = node.querySelector<HTMLAnchorElement>(
-            'a[data-automation=jobCardCompanyLink][href*=jobs-at]',
+            'a[data-automation="jobCompany"]',
           )
-          if (!a) return
-          let { pathname } = new URL(a.href)
-          // e.g. /hk/jobs-at/yan-chai-hospital-board-hk100027455/1
-          let match = pathname.match(
-            /^\/hk\/jobs-at\/([\w-'%&().,+~*!]+)-hk(\d+)\/(\d+)$/,
-          )
-          if (!match)
-            throw new Error('Unknown jobCardCompanyLink : ' + pathname)
+          if (!a) {
+            for (let span of node.querySelectorAll('span')) {
+              if (span.innerText == 'Private Advertiser') {
+                return null
+              }
+            }
+            throw new Error('jobCompany not found, jobId: ' + jobId)
+          }
+          let href = a.getAttribute('href')
+          if (!href) throw new Error('jobCompany link not found')
+          // e.g. "/jobs?advertiserid=60189680" or "/Here-We-Seoul-jobs"
+          let match =
+            href.match(/^\/jobs\?advertiserid=(\d+)$/) ||
+            href.match(/^\/([\w-'%&().,+~*!]+)-jobs$/)
+          if (!match) throw new Error('Unknown jobCompany : ' + href)
           let slug = match[1]
-          let id = +match[2]
+          if (slug.includes('%')) {
+            slug = decodeURI(slug)
+          }
+          let id = +match[1] || null
           let name = a.innerText.trim()
           return { id, slug, name }
         }
@@ -118,13 +131,13 @@ async function collectJobList(
         let jobSellingPoints = findJobCardSellingPoints()
 
         function findJobPostTime() {
-          let timeNode = node.querySelector('time[datetime]')
+          let timeNode = node.querySelector(
+            '[data-automation="jobListingDate"]',
+          )
           if (!timeNode) throw new Error('jobPostTime not found')
-          let value = timeNode.getAttribute('datetime')!
-          let date = new Date(value)
-          let time = date.getTime()
-          if (!time) throw new Error('invalid jobPostTime: ' + value)
-          return time
+          let relativeTime = timeNode.textContent?.trim()
+          if (!relativeTime) throw new Error('Unknown jobPostTime')
+          return `${relativeTime} @${Date.now()}`
         }
         let jobPostTime = findJobPostTime()
 
@@ -173,7 +186,6 @@ async function collectJobList(
         return {
           jobId,
           jobAdType,
-          jobSlug,
           jobTitle,
           company,
           jobLocation,
@@ -188,21 +200,29 @@ async function collectJobList(
 
   type Job = (typeof jobs)[number]
 
-  const SKIP = 1
-  const NEW = 2
+  const STATUS_SKIP = 1
+  const STATUS_NEW = 2
 
   let storeJob = db.transaction((job: Job) => {
-    if (job.jobId in proxy.job) {
-      return SKIP
+    if (
+      job.jobId in proxy.job &&
+      (!job.company || proxy.job[job.jobId]?.company_id)
+    ) {
+      return STATUS_SKIP
     }
 
     let ad_type_id = getDataId(proxy.ad_type, { type: job.jobAdType })
 
-    if (job.company && !(job.company.id in proxy.company)) {
-      proxy.company[job.company.id] = {
-        slug: job.company.slug,
-        name: job.company.name,
-      }
+    if (job.company) {
+      job.company.id =
+        find(proxy.company, {
+          slug: job.company.slug,
+          name: job.company.name,
+        })?.id ||
+        proxy.company.push({
+          slug: job.company.slug,
+          name: job.company.name,
+        })
     }
 
     let location_id = !job.jobLocation
@@ -215,11 +235,11 @@ async function collectJobList(
 
     proxy.job[job.jobId] = {
       ad_type_id,
-      slug: job.jobSlug,
+      slug: null,
       title: job.jobTitle,
       company_id: job.company?.id || null,
       location_id,
-      post_time: toSqliteTimestamp(new Date(job.jobPostTime)),
+      post_time: job.jobPostTime,
     }
 
     for (let content of job.jobSellingPoints) {
@@ -244,34 +264,33 @@ async function collectJobList(
       proxy.job_type_job.push({ job_id: job.jobId, job_type_id })
     }
 
-    return NEW
+    return STATUS_NEW
   })
 
-  let nNewJob = 0
+  progress.nJobsInPage = jobs.length
+  progress.nNewJobsInPage = 0
 
   for (let job of jobs) {
     let status = storeJob(job)
-    if (status == NEW) {
+    if (status == STATUS_NEW) {
       jobDetailCollector.queueJob(job.jobId)
-      nNewJob++
+      progress.nNewJobsInPage++
     }
   }
-
-  return { nNewJob }
 }
 
 type CollectedJobDetail = Awaited<ReturnType<typeof collectJobDetail>>
 
 async function collectJobDetail(page: Page, jobId: number) {
   let job = proxy.job[jobId]
-  let url = `https://hk.jobsdb.com/hk/en/job/${job.slug}-${job.id}`
+  let url = `https://hk.jobsdb.com/job/${job.id}`
 
   async function run() {
     await page.goto(url)
     return await page.evaluate(() => {
       function findJobDescription() {
         let node = document.querySelector<HTMLDivElement>(
-          '[data-automation="jobDescription"]',
+          '[data-automation="jobAdDetails"]',
         )
         if (!node) throw new Error('jobDescription not found')
         let html = node.innerHTML.trim()
@@ -571,7 +590,9 @@ type JobDetailCollector = ReturnType<typeof createJobDetailCollector>
 let progress = {
   startTime: Date.now(),
   page: 0,
-  pages: 0,
+  pages: 177,
+  nJobsInPage: 0,
+  nNewJobsInPage: 0,
   jobs: 0,
   jobsDone: 0,
   jobsUsedTime: 0,
@@ -598,36 +619,28 @@ function reportProgress() {
 }
 
 async function main() {
-  let browser = await chromium.launch({ headless: true })
+  let browser = await chromium.launch({ headless: false })
   let page = await browser.newPage()
-  let url = 'https://hk.jobsdb.com/hk/jobs/information-technology/1'
-  await page.goto(url)
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
 
-  progress.pages = await page.evaluate(() => {
-    let select = document.querySelector<HTMLSelectElement>('select#pagination')
-    if (!select) throw new Error('pagination not found')
-    let pages = Math.max(
-      ...Array.from(select.options, option => +option.value).filter(s => s),
-    )
-    if (!pages) throw new Error('Unknown pagination')
-    return pages
-  })
-
   for (
     progress.page = getCurrentPage();
-    progress.page <= progress.pages && progress.oldPage <= progress.maxOldPage;
+    progress.oldPage <= progress.maxOldPage;
     progress.page++
   ) {
     reportProgress()
-    let result = await collectJobList(page, progress.page, jobDetailCollector)
-    if (result.nNewJob == 0) {
+    await collectJobList(page, progress.page, jobDetailCollector)
+    if (progress.nNewJobsInPage == 0) {
       progress.oldPage++
     } else {
       progress.oldPage = 0
     }
     saveCurrentPage(progress.page)
+    if (progress.nJobsInPage == 0) {
+      progress.pages = progress.page
+      break
+    }
   }
   reportProgress()
 
