@@ -288,6 +288,12 @@ async function collectJobDetail(page: Page, jobId: number) {
   async function run() {
     await page.goto(url)
     return await page.evaluate(() => {
+      for (let h2 of document.querySelectorAll('h2')) {
+        if (h2.innerText == 'This job is no longer advertised') {
+          return null
+        }
+      }
+
       function findJobDescription() {
         let node = document.querySelector<HTMLDivElement>(
           '[data-automation="jobAdDetails"]',
@@ -423,14 +429,16 @@ async function collectJobDetail(page: Page, jobId: number) {
     return run()
   })
 
-  return { jobId, url, ...jobDetail }
+  return { jobId, url, jobDetail }
 }
 
 let storeCollectedJobDetail = db.transaction(
-  (jobDetail: CollectedJobDetail) => {
+  (collectedJobDetail: CollectedJobDetail) => {
+    let { jobId, url, jobDetail } = collectedJobDetail
+    if (!jobDetail) {
+      return null
+    }
     let {
-      jobId,
-      url,
       jobDescription,
       additionalInformation,
       companyOverview,
