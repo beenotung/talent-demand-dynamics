@@ -442,6 +442,7 @@ let storeCollectedJobDetail = db.transaction(
   (collectedJobDetail: CollectedJobDetail) => {
     let { jobId, url, jobDetail } = collectedJobDetail
     if (!jobDetail) {
+      deleteJob(jobId)
       return null
     }
     let {
@@ -543,6 +544,14 @@ where id not in (
 `,
   )
   .pluck()
+
+let delete_job = db.prepare(/* sql */ `
+delete from job where id = :id
+`)
+
+function deleteJob(jobId: number) {
+  delete_job.run({ id: jobId })
+}
 
 function createJobDetailCollector(page: Page) {
   type Status = 'running' | 'idle'
