@@ -294,6 +294,12 @@ async function collectJobDetail(page: Page, jobId: number) {
         }
       }
 
+      for (let h3 of document.querySelectorAll('h3')) {
+        if (h3.innerText == 'We couldn’t find that page') {
+          return null
+        }
+      }
+
       function findJobDescription() {
         let node = document.querySelector<HTMLDivElement>(
           '[data-automation="jobAdDetails"]',
