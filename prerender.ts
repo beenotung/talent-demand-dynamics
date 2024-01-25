@@ -2,11 +2,12 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { db } from './db'
 import { count } from 'better-sqlite3-proxy'
 import { proxy } from './proxy'
+import { patchPostTime } from './time'
 
 let select_range = db.prepare(/* sql */ `
 select
-  min(post_time) as since
-, max(post_time) as until
+  min(resolved_post_time) as since
+, max(resolved_post_time) as until
 from job
 `)
 
@@ -103,6 +104,7 @@ export function loadTemplate() {
 }
 
 function main() {
+  patchPostTime()
   let page = loadTemplate()
 
   mkdirSync('public', { recursive: true })

@@ -5,6 +5,7 @@ import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
 import { format_time_duration } from '@beenotung/tslib/format'
 import { later } from '@beenotung/tslib/async/wait'
+import { resolvePostTime } from './time'
 
 function getCurrentPage() {
   try {
@@ -240,6 +241,7 @@ async function collectJobList(
       company_id: job.company?.id || null,
       location_id,
       post_time: job.jobPostTime,
+      resolved_post_time: resolvePostTime(job.jobPostTime),
     }
 
     for (let content of job.jobSellingPoints) {

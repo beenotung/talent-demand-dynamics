@@ -34,6 +34,7 @@ export type Job = {
   company_id: null | number
   company?: Company
   post_time: string
+  resolved_post_time: null | string
 }
 
 export type Content = {

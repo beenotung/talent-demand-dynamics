@@ -24,6 +24,7 @@ title text
 location_id integer NULL FK >0- location.id
 company_id integer NULL FK >0- company.id
 post_time timestamp
+resolved_post_time timestamp NULL
 
 
 ad_type
