@@ -1,6 +1,6 @@
 import { Page, chromium } from 'playwright'
 import { proxy } from './proxy'
-import { find, toSqliteTimestamp } from 'better-sqlite3-proxy'
+import { del, find, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { db } from './db'
 import { readFileSync, writeFileSync } from 'fs'
 import { format_time_duration } from '@beenotung/tslib/format'
@@ -547,12 +547,11 @@ where id not in (
   )
   .pluck()
 
-let delete_job = db.prepare(/* sql */ `
-delete from job where id = :id
-`)
-
 function deleteJob(jobId: number) {
-  delete_job.run({ id: jobId })
+  del(proxy.selling_point, { job_id: jobId })
+  del(proxy.job_category, { job_id: jobId })
+  del(proxy.job_type_job, { job_id: jobId })
+  delete proxy.job[jobId]
 }
 
 function createJobDetailCollector(page: Page) {
