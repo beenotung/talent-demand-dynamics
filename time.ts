@@ -10,6 +10,14 @@ export function resolvePostTime(text: string): string {
   if (!text.includes('@')) {
     return text
   }
+  {
+    let match = text.match(/^just now @(\d+)$/)
+    if (match) {
+      let time = +match[1]
+      if (!time) throw new Error(`Failed to extract timestamp: ${text}`)
+      return toSqliteTimestamp(new Date(time))
+    }
+  }
   let match = text.match(/^(\d+)(\w+)\+? ago @(\d+)$/)
   if (!match) throw new Error(`Invalid post time: ${text}`)
   let relativeAmount = +match[1]
