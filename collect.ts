@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { format_time_duration } from '@beenotung/tslib/format'
 import { later } from '@beenotung/tslib/async/wait'
 import { resolvePostTime } from './time'
+import { GracefulPage } from 'graceful-playwright'
 
 function getCurrentPage() {
   try {
@@ -19,7 +20,7 @@ function saveCurrentPage(page: number) {
 }
 
 async function collectJobList(
-  page: Page,
+  page: GracefulPage,
   pageNo: number,
   jobDetailCollector: JobDetailCollector,
 ) {
@@ -644,7 +645,7 @@ function reportProgress() {
 
 async function main() {
   let browser = await chromium.launch({ headless: true })
-  let page = await browser.newPage()
+  let page = new GracefulPage({ from: browser })
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
 
