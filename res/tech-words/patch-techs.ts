@@ -59,4 +59,5 @@ export let patchTechs = [
   'deploy',
   'aws',
   'azure',
+  'databricks',
 ]
