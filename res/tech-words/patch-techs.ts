@@ -60,4 +60,5 @@ export let patchTechs = [
   'aws',
   'azure',
   'databricks',
+  'airflow',
 ]
