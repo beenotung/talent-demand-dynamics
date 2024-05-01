@@ -7,6 +7,7 @@ export let patchTechs = [
   'cv2',
   'knexjs',
   'nestjs',
+  'koa',
   'nodejs',
   'nuxtjs',
   'threejs',
