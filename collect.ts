@@ -83,16 +83,37 @@ async function collectJobList(
           }
           let href = a.getAttribute('href')
           if (!href) throw new Error('jobCompany link not found')
-          // e.g. "/jobs?advertiserid=60189680" or "/Here-We-Seoul-jobs"
-          let match =
-            href.match(/^\/jobs\?advertiserid=(\d+)$/) ||
-            href.match(/^\/([\w-'%&().,+~*!]+)-jobs$/)
-          if (!match) throw new Error('Unknown jobCompany : ' + href)
-          let slug = match[1]
-          if (slug.includes('%')) {
-            slug = decodeURI(slug)
+
+          let id: number | null = null
+          let slug: string | null = null
+
+          // e.g. "/jobs?advertiserid=60189680"
+          let match = href.match(/^\/jobs\?advertiserid=(\d+)$/)
+          if (match) {
+            id = +match[1] || null
           }
-          let id = +match[1] || null
+
+          // e.g. "/jobs?keywords=RTX+A%2FS"
+          let search = href.split('?').slice(1).join('?')
+          if (search) {
+            slug = new URLSearchParams(search).get('keywords') || null
+          }
+
+          // e.g. "/Here-We-Seoul-jobs"
+          match = slug ? null : href.match(/^\/([\w-'%&().,+~*!]+)-jobs$/)
+          if (match) {
+            slug = match[1]
+            if (slug.includes('%')) {
+              slug = decodeURI(slug)
+            }
+          }
+
+          if (!slug && id) {
+            slug = id.toString()
+          }
+
+          if (!slug) throw new Error('Unknown jobCompany : ' + href)
+
           let name = a.innerText.trim()
           return { id, slug, name }
         }
