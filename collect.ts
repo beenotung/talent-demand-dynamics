@@ -245,6 +245,8 @@ async function collectJobList(
         proxy.company.push({
           slug: job.company.slug,
           name: job.company.name,
+          employees: null,
+          profile_id: null,
         })
     }
 
@@ -361,8 +363,21 @@ async function collectJobDetail(page: Page, jobId: number) {
             case 'Additional Company Information':
               findAdditionalCompanyInformation(h4)
               break
-            default:
-              throw new Error('Unknown h4, text: ' + JSON.stringify(text))
+            default: {
+              let profile = h4.closest<HTMLDivElement>(
+                '[data-automation="company-profile"]',
+              )
+              if (profile) {
+                findCompanyProfile(profile)
+                break
+              }
+              throw new Error(
+                'Unknown h4, text: ' +
+                  JSON.stringify(text) +
+                  ', url: ' +
+                  location.href,
+              )
+            }
           }
         }
       }
@@ -439,6 +454,29 @@ async function collectJobDetail(page: Page, jobId: number) {
         }
       }
 
+      let companyProfile: {
+        html: string
+        text: string
+        employees?: string
+      } | null = nullCast()
+      function findCompanyProfile(profile: HTMLElement) {
+        // e.g. `<span>101-1,000 employees</span>`
+        // TODO collect number of employees
+        companyProfile = {
+          html: profile.outerHTML,
+          text: profile.outerText,
+        }
+        let spans = profile.querySelectorAll('span')
+        for (let span of spans) {
+          let text = span.innerText
+          if (text.endsWith(' employees')) {
+            let employees = text.replace(/ employees$/, '')
+            companyProfile.employees = employees
+            break
+          }
+        }
+      }
+
       findSections()
 
       return {
@@ -446,6 +484,7 @@ async function collectJobDetail(page: Page, jobId: number) {
         additionalInformation,
         companyOverview,
         additionalCompanyInformation,
+        companyProfile,
       }
     })
   }
@@ -474,7 +513,32 @@ let storeCollectedJobDetail = db.transaction(
       additionalInformation,
       companyOverview,
       additionalCompanyInformation,
+      companyProfile,
     } = jobDetail
+
+    let company = proxy.job[jobId].company
+    if (companyProfile && company) {
+      let profile = company.profile
+      if (profile) {
+        if (profile.html != companyProfile.html) {
+          profile.html = companyProfile.html
+        }
+        if (profile.text != companyProfile.text) {
+          profile.text = companyProfile.text
+        }
+      } else {
+        company.profile_id = proxy.content.push({
+          html: companyProfile.html,
+          text: companyProfile.text,
+        })
+      }
+      if (
+        companyProfile.employees &&
+        company.employees != companyProfile.employees
+      ) {
+        company.employees = companyProfile.employees
+      }
+    }
 
     if (jobId in proxy.job_detail) return
 
