@@ -11,7 +11,7 @@ export function resolvePostTime(text: string): string {
     return text
   }
   {
-    let match = text.match(/^just now @(\d+)$/)
+    let match = text.match(/^just now @(\d+)$/i)
     if (match) {
       let time = +match[1]
       if (!time) throw new Error(`Failed to extract timestamp: ${text}`)
