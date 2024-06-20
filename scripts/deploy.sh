@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 
+npx ts-node count-words.ts
 npm run build
 node dist/prerender.js
 
