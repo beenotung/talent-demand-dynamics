@@ -37,7 +37,7 @@
     "knex": "^2.4.2",
     "listening-on": "^2.0.9",
     "meta-stopwords": "^1.0.2",
-    "playwright": "^1.44.1",
+    "playwright": "^1.45.0",
     "pluralize": "^8.0.0",
     "populate-env": "^2.0.0"
   }
