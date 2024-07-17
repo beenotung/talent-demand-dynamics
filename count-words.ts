@@ -70,6 +70,9 @@ export function main() {
 
   let specialWords = [...specialTechWords, 'r & d']
 
+  allTechWords.sort((a, b) => b.length - a.length)
+  specialWords.sort((a, b) => b.length - a.length)
+
   timer.next('scan job detail')
   let job_ids = select_job_ids.all() as number[]
 
