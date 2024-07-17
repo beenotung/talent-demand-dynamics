@@ -19,7 +19,11 @@ let select_special_tech_words = db
     /* sql */ `
 select word from word
 where is_tech = 1
-  and (word like '% %' or word like '%.%' or word like '%-%')
+  and (word like '% %'
+    or word like '%.%'
+    or word like '%-%'
+    or word like '%+%'
+  )
 `,
   )
   .pluck()
