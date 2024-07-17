@@ -62,4 +62,5 @@ export let patchTechs = [
   'azure',
   'databricks',
   'airflow',
+  'CUDA'
 ]
