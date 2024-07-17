@@ -61,6 +61,7 @@ export function* splitWords(
 
   let match = text.match(/([\w-#]+)/g)
   if (!match) return
+  match.sort((a, b) => b.length - a.length)
   for (let word of match) {
     if (+word) continue
     if (!allTechWords.includes(word) && isStopWord(word)) continue
