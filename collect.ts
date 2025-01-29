@@ -729,7 +729,7 @@ function reportProgress() {
 }
 
 async function main() {
-  let browser = await chromium.launch({ headless: true })
+  let browser = await chromium.launch({ headless: false })
   let page = new GracefulPage({ from: browser })
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
