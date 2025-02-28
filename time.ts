@@ -1,4 +1,4 @@
-import { DAY, HOUR, MINUTE } from '@beenotung/tslib/time'
+import { DAY, HOUR, MINUTE, MONTH } from '@beenotung/tslib/time'
 import { filter, toSqliteTimestamp } from 'better-sqlite3-proxy'
 import { proxy } from './proxy'
 
@@ -33,6 +33,9 @@ export function resolvePostTime(text: string): string {
       break
     case 'd':
       date.setTime(date.getTime() - relativeAmount * DAY)
+      break
+    case 'mo':
+      date.setTime(date.getTime() - relativeAmount * MONTH)
       break
     default:
       throw new Error(`Invalid post time, unit: ${relativeUnit}`)
