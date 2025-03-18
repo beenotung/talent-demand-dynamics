@@ -59,6 +59,8 @@ export let patchTechs = [
   'deployment',
   'deploy',
   'aws',
+  'sagemaker',
+  'sage maker',
   'azure',
   'databricks',
   'airflow',
