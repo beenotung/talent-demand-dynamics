@@ -40,5 +40,10 @@
     "playwright": "^1.51.1",
     "pluralize": "^8.0.0",
     "populate-env": "^2.4.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }
