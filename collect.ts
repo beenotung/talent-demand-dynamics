@@ -363,6 +363,9 @@ async function collectJobDetail(page: Page, jobId: number) {
             case 'Additional Company Information':
               findAdditionalCompanyInformation(h4)
               break
+            case 'Featured jobs':
+              // not stored
+              break
             default: {
               let profile = h4.closest<HTMLDivElement>(
                 '[data-automation="company-profile"]',
