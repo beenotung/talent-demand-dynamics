@@ -85,9 +85,9 @@ export function loadTemplate() {
     }
     return [
       p1,
-      data.job_count,
+      data.job_count.toLocaleString(),
       p2,
-      data.company_count,
+      data.company_count.toLocaleString(),
       p3,
       range.since,
       p4,

@@ -155,10 +155,11 @@
           row.cells[1].querySelector('.relative').textContent = relative.company
         }
         let n = rows.length
+        let n_str = n.toLocaleString()
         if (n > 1) {
-          result.textContent = `${n} matched keywords`
+          result.textContent = `${n_str} matched keywords`
         } else {
-          result.textContent = `${n} matched keyword`
+          result.textContent = `${n_str} matched keyword`
         }
       }
       search()
