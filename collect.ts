@@ -312,7 +312,7 @@ async function collectJobDetail(page: Page, jobId: number) {
   let url = `https://hk.jobsdb.com/job/${job.id}`
 
   async function run() {
-    await page.goto(url)
+    await page.goto(url, { waitUntil: 'domcontentloaded' })
     return await page.evaluate(() => {
       for (let h2 of document.querySelectorAll('h2')) {
         if (h2.innerText == 'This job is no longer advertised') {
