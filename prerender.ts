@@ -57,19 +57,25 @@ export function loadTemplate() {
   parts = parts[0].split('{job_count}')
   let p1 = parts[0]
 
-  parts = parts[1].split('{company_count}')
+  parts = parts[1].split('{job_count_str}')
   let p2 = parts[0]
 
-  parts = parts[1].split('{since}')
+  parts = parts[1].split('{company_count}')
   let p3 = parts[0]
 
-  parts = parts[1].split('{until}')
+  parts = parts[1].split('{company_count_str}')
   let p4 = parts[0]
 
-  parts = parts[1].split('{tbody}')
+  parts = parts[1].split('{since}')
   let p5 = parts[0]
 
-  let p6 = parts[1]
+  parts = parts[1].split('{until}')
+  let p6 = parts[0]
+
+  parts = parts[1].split('{tbody}')
+  let p7 = parts[0]
+
+  let p8 = parts[1]
 
   function render(data: Data): string {
     let { range } = data
@@ -85,16 +91,20 @@ export function loadTemplate() {
     }
     return [
       p1,
-      data.job_count.toLocaleString(),
+      data.job_count,
       p2,
-      data.company_count.toLocaleString(),
+      data.job_count.toLocaleString(),
       p3,
-      range.since,
+      data.company_count,
       p4,
-      range.until,
+      data.company_count.toLocaleString(),
       p5,
-      tbody,
+      range.since,
       p6,
+      range.until,
+      p7,
+      tbody,
+      p8,
     ].join('')
   }
 

@@ -37,8 +37,8 @@
       shown in the job ads.
     </p>
     <p>
-      Sampled <span id="job_count">{job_count}</span> jobs from
-      <span id="company_count">{company_count}</span> companies posted between
+      Sampled <span id="job_count" data-value="{job_count}">{job_count_str}</span> jobs from
+      <span id="company_count" data-value="{company_count}">{company_count_str}</span> companies posted between
       {since} and {until}
     </p>
     <div>
@@ -85,7 +85,13 @@
       </tbody>
     </table>
     <script>
-      let f1 = x => x.toFixed(1)
+      let f1 = x => {
+        let res = x.toFixed(1)
+        if (res == 'NaN') {
+          debugger
+        }
+        return res
+      }
       form.mode.value ||= 'po'
       for (let row of table.tBodies[0].rows) {
         row.job = +row.cells[0].innerText
@@ -104,8 +110,8 @@
           .filter(part => part.length > 0)
         let max_job = 0
         let max_company = 0
-        let total_job = +job_count.innerText
-        let total_company = +company_count.innerText
+        let total_job = +job_count.dataset.value
+        let total_company = +company_count.dataset.value
         let matched_job = 0
         let matched_company = 0
         let rows = []
