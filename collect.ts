@@ -374,6 +374,11 @@ async function collectJobDetail(page: Page, jobId: number) {
                 findCompanyProfile(profile)
                 break
               }
+              let rect = h4.getBoundingClientRect()
+              if (text == '' && rect.height * rect.width == 0) {
+                // hidden section
+                break
+              }
               throw new Error(
                 'Unknown h4, text: ' +
                   JSON.stringify(text) +
