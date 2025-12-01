@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@beenotung/tslib": "^24.6.2",
+    "better-sqlite3": "^12.5.0",
     "better-sqlite3-proxy": "^2.11.0",
     "better-sqlite3-schema": "^3.1.8",
     "bpe-tokenizer": "^2.2.0",
