@@ -6,7 +6,7 @@ npx ts-node count-words.ts
 npm run build
 node dist/prerender.js
 
-source .env
+source ./.env
 
 rsync -SavLPz \
   package.json \
