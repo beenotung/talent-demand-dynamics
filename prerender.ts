@@ -52,30 +52,16 @@ function getData(): Data {
 export function loadTemplate() {
   let template = readFileSync('template/index.html').toString()
 
-  let parts = [template]
-
-  parts = parts[0].split('{job_count}')
-  let p1 = parts[0]
-
-  parts = parts[1].split('{job_count_str}')
-  let p2 = parts[0]
-
-  parts = parts[1].split('{company_count}')
-  let p3 = parts[0]
-
-  parts = parts[1].split('{company_count_str}')
-  let p4 = parts[0]
-
-  parts = parts[1].split('{since}')
-  let p5 = parts[0]
-
-  parts = parts[1].split('{until}')
-  let p6 = parts[0]
-
-  parts = parts[1].split('{tbody}')
-  let p7 = parts[0]
-
-  let p8 = parts[1]
+  function apply_values(values: Record<string, string | number>) {
+    let parts = [template]
+    for (let [key, value] of Object.entries(values)) {
+      let pattern = '{' + key + '}'
+      let last = parts.pop()!
+      let [before, after] = last.split(pattern)
+      parts.push(before, String(value), after)
+    }
+    return parts.join('')
+  }
 
   function render(data: Data): string {
     let { range } = data
@@ -89,23 +75,16 @@ export function loadTemplate() {
 </tr>
 `
     }
-    return [
-      p1,
-      data.job_count,
-      p2,
-      data.job_count.toLocaleString(),
-      p3,
-      data.company_count,
-      p4,
-      data.company_count.toLocaleString(),
-      p5,
-      range.since,
-      p6,
-      range.until,
-      p7,
-      tbody,
-      p8,
-    ].join('')
+
+    return apply_values({
+      job_count: data.job_count,
+      job_count_str: data.job_count.toLocaleString(),
+      company_count: data.company_count,
+      company_count_str: data.company_count.toLocaleString(),
+      since: range.since,
+      until: range.until,
+      tbody: tbody,
+    })
   }
 
   let data = getData()
