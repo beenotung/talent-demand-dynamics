@@ -160,9 +160,15 @@ async function collectJobList(
           if (!timeNode) throw new Error('jobPostTime not found')
           let relativeTime = timeNode.textContent?.trim()
           if (!relativeTime) throw new Error('Unknown jobPostTime')
-          return `${relativeTime} @${Date.now()}`
+          let expiringSuffix = '•Expiring'
+          let expiring = relativeTime.endsWith(expiringSuffix)
+          if (expiring) {
+            relativeTime = relativeTime.slice(0, -expiringSuffix.length).trim()
+          }
+          let jobPostTime = `${relativeTime} @${Date.now()}`
+          return { jobPostTime, expiring }
         }
-        let jobPostTime = findJobPostTime()
+        let { jobPostTime, expiring } = findJobPostTime()
 
         let jobCategories = Array.from(
           node.querySelectorAll<HTMLAnchorElement>(
@@ -214,6 +220,7 @@ async function collectJobList(
           jobLocation,
           jobSellingPoints,
           jobPostTime,
+          expiring,
           jobCategories,
           jobTypes,
         }
@@ -266,6 +273,7 @@ async function collectJobList(
       location_id,
       post_time: job.jobPostTime,
       resolved_post_time: resolvePostTime(job.jobPostTime),
+      expiring: job.expiring,
     }
 
     for (let content of job.jobSellingPoints) {

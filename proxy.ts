@@ -49,6 +49,7 @@ export type Job = {
   company?: Company
   post_time: string
   resolved_post_time: null | string
+  expiring: null | boolean
 }
 
 export type Category = {

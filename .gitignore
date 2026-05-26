@@ -16,3 +16,7 @@ temp.html
 temp.txt
 words.txt
 public/index.html
+.env.*
+!.env.example
+dump.sql
+*.xz
