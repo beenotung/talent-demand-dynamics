@@ -683,7 +683,8 @@ function createJobDetailCollector(page: Page) {
     let startTime = Date.now()
     collectJobDetail(page, jobId)
       .then(storeCollectedJobDetail)
-      .finally(() => {
+      .finally(async () => {
+        await later(500 + Math.random() * 1500)
         let endTime = Date.now()
         progress.jobsUsedTime += endTime - startTime
         progress.jobsDone++
