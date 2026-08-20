@@ -321,7 +321,14 @@ async function collectJobDetail(page: Page, jobId: number) {
 
   async function run() {
     await page.goto(url, { waitUntil: 'domcontentloaded' })
-    return await page.evaluate(() => {
+    return await page.evaluate(async () => {
+      while (!document.title) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+
+      if (document.title.startsWith('404 Page Not Found | ')) {
+        return null
+      }
       for (let h2 of document.querySelectorAll('h2')) {
         if (h2.innerText == 'This job is no longer advertised') {
           return null
