@@ -756,10 +756,20 @@ async function main() {
   let browser = await chromium.launch({ headless: false })
   let page = new GracefulPage({
     from: browser,
-    gotoLog: { console: true, file: 'goto.log' },
+    onGoto: info => {
+      console.log()
+      console.log('[goto]', {
+        url: info.url,
+        status: info.status,
+        challenge: info.challenge.likely,
+      })
+    },
     onChallenge: context => {
       console.log()
-      console.log('anti-bot challenge:', context.info.url)
+      console.log('[challenge]', {
+        url: context.info.url,
+        signal: context.info.challenge.signals,
+      })
     },
     waitUntilChallengeClear: true,
   })
