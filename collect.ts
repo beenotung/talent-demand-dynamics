@@ -747,7 +747,15 @@ function reportProgress() {
 
 async function main() {
   let browser = await chromium.launch({ headless: false })
-  let page = new GracefulPage({ from: browser })
+  let page = new GracefulPage({
+    from: browser,
+    gotoLog: { console: true, file: 'goto.log' },
+    onChallenge: context => {
+      console.log()
+      console.log('anti-bot challenge:', context.info.url)
+    },
+    waitUntilChallengeClear: true,
+  })
 
   let jobDetailCollector = createJobDetailCollector(await browser.newPage())
 
